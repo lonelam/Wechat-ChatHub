@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  chathub:
+    image: lonelam/chathub
+    ports:
+      - "8080:3000" # host:container
+    depends_on:
+      - db
+    environment:
+      DATABASE_HOST: db
+      DATABASE_USER: ${DATABASE_USER} # Using environment variable
+      DATABASE_PASSWORD: ${DATABASE_PASS} # Using environment variable
+      DATABASE_NAME: chathub_db
+
+  db:
+    image: mariadb
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASS} # Using environment variable
+      MYSQL_DATABASE: chathub_db
+      MYSQL_USER: ${DATABASE_USER} # Using environment variable
+      MYSQL_PASSWORD: ${DATABASE_PASS} # Using environment variable
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
