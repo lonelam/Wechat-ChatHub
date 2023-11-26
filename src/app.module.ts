@@ -11,7 +11,10 @@ import { TokenModule } from './token/token.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: ['.env', '.env.development.local', '.env.development'],
+      envFilePath:
+        process.env.NODE_ENV === 'production'
+          ? ['.env', '.env.local', '.env.production']
+          : ['.env', '.env.local', '.env.development'],
     }),
     GptModule,
     ChatdbModule,
