@@ -10,7 +10,7 @@ services:
     environment:
       DATABASE_HOST: db
       DATABASE_USER: ${DATABASE_USER} # Using environment variable
-      DATABASE_PASSWORD: ${DATABASE_PASS} # Using environment variable
+      DATABASE_PASS: ${DATABASE_PASS} # Using environment variable
       DATABASE_NAME: chathub_db
 
   db:
