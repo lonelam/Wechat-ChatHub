@@ -4,7 +4,7 @@ services:
   chathub:
     image: lonelam/chathub
     ports:
-      - "18080:3000" # host:container
+      - "127.0.0.1:18080:3000" # host:container
     depends_on:
       - db
     environment:
@@ -16,7 +16,7 @@ services:
   db:
     image: mariadb
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${DATABASE_PASS} # Using environment variable
       MYSQL_DATABASE: chathub_db
