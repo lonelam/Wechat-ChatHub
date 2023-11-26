@@ -10,5 +10,39 @@ export class FriendService {
     private friendRepository: Repository<Friend>,
   ) {}
 
-  // Methods to add, find, update friends...
+  async getOrCreateFriendByFriendId(
+    friendId: string,
+    friendName: string,
+    friendGender: number,
+    friendAlias: string,
+    friendAvatarUrl: string,
+  ) {
+    const friend = await this.friendRepository.findOne({
+      where: {
+        wechatId: friendId,
+      },
+    });
+    if (friend) {
+      if (
+        friend.name !== friendName ||
+        friend.gender !== friendGender ||
+        friend.alias !== friendAlias ||
+        friend.avatarUrl !== friendAvatarUrl
+      ) {
+        friend.name = friendName;
+        friend.gender = friendGender;
+        friend.alias = friendAlias;
+        friend.avatarUrl = friendAvatarUrl;
+        return this.friendRepository.save(friend);
+      }
+      return friend;
+    }
+    return this.friendRepository.save({
+      wechatId: friendId,
+      name: friendName,
+      gender: friendGender,
+      alias: friendAlias,
+      avatarUrl: friendAvatarUrl,
+    });
+  }
 }

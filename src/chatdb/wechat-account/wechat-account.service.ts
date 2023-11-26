@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WechatAccount } from '../entities/wechat-account.entity';
@@ -13,20 +13,58 @@ export class WechatAccountService {
     private padLocalTokenRepository: Repository<PadLocalToken>,
   ) {}
 
-  async createWechatAccount(wechatId: string): Promise<WechatAccount> {
-    const wechatAccount = this.wechatAccountRepository.create({ wechatId });
+  async getAllWechatAccounts(): Promise<WechatAccount[]> {
+    return this.wechatAccountRepository.find();
+  }
+
+  async getOrCreateWechatAccount(
+    wechatId: string,
+    name: string,
+    avatarUrl: string,
+  ): Promise<WechatAccount> {
+    const wechatAccount = await this.wechatAccountRepository.findOne({
+      where: { wechatId },
+    });
+    if (wechatAccount) {
+      return wechatAccount;
+    } else {
+      const wechatAccount = this.wechatAccountRepository.create({
+        wechatId,
+        name,
+        avatarUrl,
+      });
+      return this.wechatAccountRepository.save(wechatAccount);
+    }
+  }
+
+  async getWechatAccountByWechatId(wechatId: string) {
+    return this.wechatAccountRepository.findOne({
+      where: { wechatId },
+    });
+  }
+
+  async createWechatAccount(
+    wechatId: string,
+    name: string,
+    avatarUrl: string,
+  ): Promise<WechatAccount> {
+    const wechatAccount = this.wechatAccountRepository.create({
+      wechatId,
+      name,
+      avatarUrl,
+    });
     return this.wechatAccountRepository.save(wechatAccount);
   }
 
   async bindAccountToToken(
-    wechatAccountId: number,
-    tokenId: number,
+    wechatId: string,
+    tokenId: string,
   ): Promise<WechatAccount> {
     const wechatAccount = await this.wechatAccountRepository.findOne({
-      where: { id: wechatAccountId },
+      where: { wechatId },
     });
     const token = await this.padLocalTokenRepository.findOne({
-      where: { id: tokenId },
+      where: { token: tokenId },
     });
 
     if (wechatAccount && token) {
@@ -34,7 +72,23 @@ export class WechatAccountService {
       return this.wechatAccountRepository.save(wechatAccount);
     }
 
-    throw new Error('WechatAccount or PadLocalToken not found');
+    throw new NotFoundException('Wechat account or token not found');
+  }
+
+  async unbindAccountFromToken(wechatId: string, tokenId: string) {
+    const wechatAccount = await this.wechatAccountRepository.findOne({
+      where: { wechatId },
+    });
+    const token = await this.padLocalTokenRepository.findOne({
+      where: { token: tokenId },
+    });
+    if (wechatAccount && token) {
+      wechatAccount.padLocalToken = null;
+      await this.wechatAccountRepository.save(wechatAccount);
+      // await this.padLocalTokenRepository.remove(token);
+      return;
+    }
+    throw new NotFoundException('Wechat account or token not found');
   }
 
   // Additional methods as needed...

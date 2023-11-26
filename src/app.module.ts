@@ -6,6 +6,7 @@ import { ChatdbModule } from './chatdb/chatdb.module';
 import { WechatModule } from './wechat/wechat.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { TokenModule } from './token/token.module';
 
 @Module({
   imports: [
@@ -27,14 +28,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
           database: configService.get('DATABASE_NAME'),
           entities: [],
           autoLoadEntities: true,
+          logging: true,
           // change this for production
           synchronize: process.env.NODE_ENV !== 'production',
+          migrations: ['dist/db/migrations/*.js'],
+          migrationsRun: process.env.NODE_ENV === 'production',
         };
       },
       inject: [ConfigService],
     }),
+    TokenModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

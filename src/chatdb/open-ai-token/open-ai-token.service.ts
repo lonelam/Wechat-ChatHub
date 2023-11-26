@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OpenAIToken } from '../entities/open-ai-token.entity';
@@ -15,17 +15,33 @@ export class OpenAITokenService {
     return this.openAITokenRepository.save(token);
   }
 
-  async deactivateToken(tokenId: number): Promise<void> {
-    await this.openAITokenRepository.update(tokenId, { isActive: false });
+  async activateToken(tokenId: number): Promise<void> {
+    await this.openAITokenRepository.update(tokenId, {
+      isActive: true,
+    });
   }
 
-  async getTokenById(tokenId: number): Promise<OpenAIToken | null> {
-    return this.openAITokenRepository.findOne({ where: { id: tokenId } });
+  async deactivateToken(tokenId: number): Promise<void> {
+    await this.openAITokenRepository.update(tokenId, {
+      isActive: false,
+    });
+  }
+
+  async getTokenByValue(tokenValue: string): Promise<OpenAIToken | null> {
+    return this.openAITokenRepository.findOne({ where: { token: tokenValue } });
   }
 
   async getActiveTokens(): Promise<OpenAIToken[]> {
     return this.openAITokenRepository.find({ where: { isActive: true } });
   }
-  
+
+  async getAllTokens(): Promise<OpenAIToken[]> {
+    return this.openAITokenRepository.find();
+  }
+
+  async getTokenById(id: number): Promise<OpenAIToken | null> {
+    return this.openAITokenRepository.findOne({ where: { id } });
+  }
+
   // Additional methods as needed...
 }

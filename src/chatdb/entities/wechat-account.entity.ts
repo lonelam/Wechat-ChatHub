@@ -17,9 +17,17 @@ export class WechatAccount {
   @Column({ unique: true, name: 'wechat_id' })
   wechatId: string;
 
-  @OneToOne(() => PadLocalToken, (token) => token.wechatAccount)
+  @Column({ name: 'name' })
+  name: string;
+
+  @Column({ name: 'avatar_url' })
+  avatarUrl: string;
+
+  @OneToOne(() => PadLocalToken, (token) => token.wechatAccount, {
+    nullable: true,
+  })
   @JoinColumn({ name: 'pad_local_token_id' })
-  padLocalToken: PadLocalToken;
+  padLocalToken: PadLocalToken | null;
 
   @OneToMany(() => ChatSession, (session) => session.wechatAccount)
   @JoinColumn({ name: 'chat_session_id' })

@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToOne,
+  JoinColumn,
+} from 'typeorm';
 import { WechatAccount } from './wechat-account.entity';
 
 @Entity('pad_local_tokens')
@@ -13,10 +19,14 @@ export class PadLocalToken {
     nullable: true,
     cascade: true,
   })
+  @JoinColumn({ name: 'wechat_account_id' })
   wechatAccount: WechatAccount | null;
 
   @Column({
     default: true,
   })
   isActive: boolean;
+
+  @Column()
+  isOccupied: boolean;
 }

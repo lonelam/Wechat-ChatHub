@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany } from 'typeorm';
 import { ChatSession } from './chat-session.entity';
 
 @Entity('friends')
@@ -15,6 +15,12 @@ export class Friend {
   @Column({ name: 'avatar_url' })
   avatarUrl: string;
 
-  @OneToMany(() => ChatSession, (session) => session.friend)
+  @Column({ name: 'gender' })
+  gender: number;
+
+  @Column({ name: 'alias' })
+  alias: string;
+
+  @ManyToMany(() => ChatSession, (session) => session.friends)
   sessions: ChatSession[];
 }
