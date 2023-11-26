@@ -8,7 +8,8 @@ export async function BotToJson(bot: WechatyInterface) {
     puppetOptions: bot.puppet.options,
     state: bot.state,
     wechatyVersion: bot.version(),
-    currentUser: bot.currentUser,
+    currentUser: bot.isLoggedIn ? bot.currentUser : null,
     isLoggedIn: bot.isLoggedIn,
+    authQrCode: bot.authQrCode,
   };
 }
