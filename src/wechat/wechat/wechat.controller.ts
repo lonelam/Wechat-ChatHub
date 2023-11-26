@@ -110,6 +110,13 @@ export class WechatController {
     );
   }
 
+  @Post('update/feature')
+  async updateFeatureFlags(
+    @Body() body: { sessionId: number; feature: number },
+  ) {
+    await this.chatSession.updateFeatureFlagsById(body.sessionId, body.feature);
+  }
+
   @Post('logout')
   async logout(@Body() body: { wechatId: string }) {
     this.wechatService.logout(body.wechatId);

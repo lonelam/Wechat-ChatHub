@@ -202,9 +202,30 @@ export class WechatService implements OnModuleDestroy {
             bot.id,
             msg.date(),
           );
-          // 自己的消息就不要推了
+          // 自己的消息就不要尝试自动回复了
           if (!msg.self()) {
-            this.openAIService.generateCompletion(chatSession);
+            const completionPromise =
+              this.openAIService.generateCompletion(chatSession);
+
+            if (chatSession.hasAutoReplyFeature) {
+              setTimeout(
+                async () => {
+                  const isReplied =
+                    await this.chatSession.checkChatSessionIsRepliedSince(
+                      chatSession.id,
+                      msg.date(),
+                      selfContact.id,
+                    );
+                  if (!isReplied) {
+                    const completion = await completionPromise;
+                    if (completion) {
+                      msg.say(completion);
+                    }
+                  }
+                },
+                (1 * 60 + 30 * Math.random()) * 1000,
+              );
+            }
           }
         });
         bot.on('error', (err) => {

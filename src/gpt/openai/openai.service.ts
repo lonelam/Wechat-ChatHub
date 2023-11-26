@@ -70,7 +70,9 @@ export class OpenAIService {
     }
     try {
       const complation = openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: chatSession.hasGptCompletionFeature
+          ? 'gpt-4-1106-preview'
+          : 'gpt-3.5-turbo',
         messages,
       });
       const createResp = await complation;

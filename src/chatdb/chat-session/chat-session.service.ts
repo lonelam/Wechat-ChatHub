@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, MoreThan, Repository } from 'typeorm';
 import { ChatSession } from '../entities/chat-session.entity';
 import { FriendService } from '../friend/friend.service';
 import { WechatAccountService } from '../wechat-account/wechat-account.service';
@@ -24,6 +24,16 @@ export class ChatSessionService {
     private friendService: FriendService,
     private wechatAccount: WechatAccountService,
   ) {}
+
+  async updateFeatureFlagsById(id: number, feature: number) {
+    const result = await this.chatSessionRepository.update(
+      { id },
+      { featureFlags: feature },
+    );
+    if (!result.affected) {
+      throw new NotFoundException(`the conversation with id ${id} not found`);
+    }
+  }
 
   async updateSystemMessageById(id: number, systemMessage: string) {
     const result = await this.chatSessionRepository.update(
@@ -74,6 +84,27 @@ export class ChatSessionService {
       });
     });
   }
+
+  async checkChatSessionIsRepliedSince(
+    sessionId: number,
+    sinceTime: Date,
+    replierId: string,
+  ) {
+    try {
+      const result = await this.historyMessageRepository.count({
+        where: {
+          chatSession: { id: sessionId },
+          sendTime: MoreThan(sinceTime),
+          senderId: replierId,
+        },
+      });
+      return Boolean(result);
+    } catch (error) {
+      console.error(`query chat session history error: ${error}`);
+      return false;
+    }
+  }
+
   async addMessageToChatSession(
     conversationId: string,
     wechatId: string,
