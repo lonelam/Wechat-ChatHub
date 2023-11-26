@@ -31,7 +31,7 @@ import { TokenModule } from './token/token.module';
           database: configService.get('DATABASE_NAME'),
           entities: [],
           autoLoadEntities: true,
-          logging: true,
+          logging: process.env.NODE_ENV !== 'production',
           // change this for production
           synchronize: process.env.NODE_ENV !== 'production',
           migrations: ['dist/db/migrations/*.js'],
