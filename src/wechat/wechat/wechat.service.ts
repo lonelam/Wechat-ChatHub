@@ -138,10 +138,10 @@ export class WechatService implements OnModuleDestroy {
           if (this.activeBots.includes(bot)) {
             this.activeBots.splice(this.activeBots.indexOf(bot), 1);
           }
-          this.botMap.delete(bot.id);
           if (this.wechatAccount) {
             this.wechatAccount.unbindAccountFromToken(user.id, token.token);
           }
+          this.hangingBots.push(bot);
         });
         bot.on('message', async (msg) => {
           const isText = msg.type() === bot.Message.Type.Text;
