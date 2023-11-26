@@ -27,6 +27,7 @@ export class WechatController {
         bot: await BotToJson(bot),
       };
     } catch (error) {
+      console.error(error);
       if (error instanceof HttpException) {
         throw error;
       }
