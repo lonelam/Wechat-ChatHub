@@ -27,6 +27,8 @@ export class PadLocalToken {
   })
   isActive: boolean;
 
-  @Column()
+  @Column({
+    default: false,
+  })
   isOccupied: boolean;
 }
