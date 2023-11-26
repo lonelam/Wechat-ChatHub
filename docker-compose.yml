@@ -3,6 +3,7 @@ version: '3.8'
 services:
   chathub:
     image: lonelam/chathub
+    restart: always
     ports:
       - "127.0.0.1:18080:3000" # host:container
     depends_on:
@@ -15,6 +16,7 @@ services:
 
   db:
     image: mariadb
+    restart: always
     ports:
       - "127.0.0.1:3306:3306"
     environment:
