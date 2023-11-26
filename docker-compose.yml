@@ -4,7 +4,7 @@ services:
   chathub:
     image: lonelam/chathub
     ports:
-      - "8080:3000" # host:container
+      - "18080:3000" # host:container
     depends_on:
       - db
     environment:
