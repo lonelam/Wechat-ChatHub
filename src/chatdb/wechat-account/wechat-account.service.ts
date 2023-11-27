@@ -84,7 +84,9 @@ export class WechatAccountService {
     });
     if (wechatAccount && token) {
       wechatAccount.padLocalToken = null;
+      token.wechatAccount = null;
       await this.wechatAccountRepository.save(wechatAccount);
+      await this.padLocalTokenRepository.save(token);
       // await this.padLocalTokenRepository.remove(token);
       return;
     }
