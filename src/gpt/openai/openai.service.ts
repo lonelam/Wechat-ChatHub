@@ -58,7 +58,7 @@ export class OpenAIService {
       });
     }
     for (const message of chatSession.historyMessages) {
-      const role = message.senderId === message.wechatId ? 'user' : 'assistant';
+      const role = message.senderId === message.wechatId ? 'assistant' : 'user';
       if (messages.length && messages[messages.length - 1]?.role === role) {
         messages[messages.length - 1].content += '\n' + message.textContent;
       } else {
