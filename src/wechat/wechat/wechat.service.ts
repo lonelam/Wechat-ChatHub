@@ -27,7 +27,11 @@ export class WechatService implements OnModuleDestroy {
     private friendService: FriendService,
     private openAIService: OpenAIService,
   ) {
-    this.padLocalToken.cleanPadLocalOccupations();
+    this.padLocalToken.cleanPadLocalOccupations().then((isLoginState) => {
+      if (isLoginState) {
+        this.startWechatBot().catch(console.error);
+      }
+    });
   }
 
   async onModuleDestroy() {
@@ -102,35 +106,39 @@ export class WechatService implements OnModuleDestroy {
         bot.on('scan', onScan);
         setTimeout(onTimeout, 1 * 60 * 1000);
         bot.on('login', async (user) => {
-          console.log(`${user} Login success, creating account...`);
-          finished = true;
-          resolve({
-            qrcode: '',
-            bot,
-          });
-          const currentIndex = this.hangingBots.indexOf(bot);
-          if (currentIndex === -1) {
-            console.log(`Bot ${bot.id} not found in hangingBots`);
-          } else {
-            this.hangingBots.splice(currentIndex, 1);
-            this.activeBots.push(bot);
-          }
+          try {
+            console.log(`${user} Login success, creating account...`);
+            finished = true;
+            resolve({
+              qrcode: '',
+              bot,
+            });
+            const currentIndex = this.hangingBots.indexOf(bot);
+            if (currentIndex === -1) {
+              console.log(`Bot ${bot.id} not found in hangingBots`);
+            } else {
+              this.hangingBots.splice(currentIndex, 1);
+              this.activeBots.push(bot);
+            }
 
-          const avatarUrl = user.payload?.avatar || '';
-          // if (!avatarUrl) {
-          //   console.log(
-          //     `no normal avatar URL found, add data url for fallback...`,
-          //   );
-          //   avatarUrl = await (await user.avatar()).toDataURL();
-          // }
+            const avatarUrl = user.payload?.avatar || '';
+            // if (!avatarUrl) {
+            //   console.log(
+            //     `no normal avatar URL found, add data url for fallback...`,
+            //   );
+            //   avatarUrl = await (await user.avatar()).toDataURL();
+            // }
 
-          const account = await this.wechatAccount.getOrCreateWechatAccount(
-            user.id,
-            await user.name(),
-            avatarUrl,
-          );
-          if (account) {
-            this.wechatAccount.bindAccountToToken(user.id, token.token);
+            const account = await this.wechatAccount.getOrCreateWechatAccount(
+              user.id,
+              await user.name(),
+              avatarUrl,
+            );
+            if (account) {
+              this.wechatAccount.bindAccountToToken(user.id, token.token);
+            }
+          } catch (error) {
+            console.error('error ', error);
           }
         });
         bot.on('logout', async (user) => {

@@ -22,8 +22,9 @@ export class PadLocalTokenService {
     });
   }
 
-  async cleanPadLocalOccupations(): Promise<void> {
-    this.dataSource.transaction(async (entityManager) => {
+  async cleanPadLocalOccupations(): Promise<boolean> {
+    let loginWechatCnt = 0;
+    await this.dataSource.transaction(async (entityManager) => {
       const occupations = await entityManager.find(PadLocalToken, {
         where: {
           isOccupied: true,
@@ -34,6 +35,9 @@ export class PadLocalTokenService {
         relations: ['wechatAccount'],
       });
       const savePromises = occupations.map(async (occupation) => {
+        if (occupation.wechatAccount) {
+          loginWechatCnt++;
+        }
         occupation.isOccupied = false;
         occupation.wechatAccount = null;
         return entityManager.save(occupation);
@@ -47,6 +51,7 @@ export class PadLocalTokenService {
         wechatAccount: null,
       },
     );
+    return Boolean(loginWechatCnt);
   }
 
   async deactivateToken(tokenId: number): Promise<void> {
@@ -86,7 +91,11 @@ export class PadLocalTokenService {
   }
 
   async getAllTokens(): Promise<PadLocalToken[]> {
-    return this.padLocalTokenRepository.find();
+    return this.padLocalTokenRepository.find({
+      relations: {
+        wechatAccount: true,
+      },
+    });
   }
 
   async getTokenById(id: number): Promise<PadLocalToken | null> {
