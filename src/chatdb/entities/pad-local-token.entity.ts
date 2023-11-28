@@ -19,7 +19,11 @@ export class PadLocalToken {
     nullable: true,
     cascade: true,
   })
-  @JoinColumn({ name: 'wechat_account_id' })
+  @JoinColumn({
+    name: 'wechat_account_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'pad_local_token_wechat_account_fk',
+  })
   wechatAccount: WechatAccount | null;
 
   @Column({

@@ -6,7 +6,9 @@ export class Friend {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true, name: 'wechat_id' })
+  @Column({
+    name: 'wechat_id',
+  })
   wechatId: string;
 
   @Column({ name: 'name' })

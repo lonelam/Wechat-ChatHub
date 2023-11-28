@@ -3,7 +3,6 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
-  JoinColumn,
   OneToOne,
 } from 'typeorm';
 import { ChatSession } from './chat-session.entity';
@@ -14,7 +13,7 @@ export class WechatAccount {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true, name: 'wechat_id' })
+  @Column({ name: 'wechat_id' })
   wechatId: string;
 
   @Column({ name: 'name' })

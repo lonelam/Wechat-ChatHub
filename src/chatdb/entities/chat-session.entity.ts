@@ -43,7 +43,19 @@ export class ChatSession {
   @ManyToMany(() => Friend, (friend) => friend.sessions, {
     cascade: true,
   })
-  @JoinTable()
+  @JoinTable({
+    name: 'chat_session_friends',
+    joinColumn: {
+      name: 'chat_session_id',
+      referencedColumnName: 'id',
+      foreignKeyConstraintName: 'fk_chat_session_friends_chat_session',
+    },
+    inverseJoinColumn: {
+      name: 'friend_id',
+      referencedColumnName: 'id',
+      foreignKeyConstraintName: 'fk_chat_session_friends_friend',
+    },
+  })
   friends: Friend[];
 
   @Column('text', { name: 'summary_message', default: '' })
