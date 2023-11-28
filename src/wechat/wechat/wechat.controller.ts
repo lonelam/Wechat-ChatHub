@@ -11,11 +11,13 @@ import {
 import { WechatService } from './wechat.service';
 import { ChatSessionService } from 'src/chatdb/chat-session/chat-session.service';
 import { BotToJson } from './expose-bot';
+import { WechatAccountService } from 'src/chatdb/wechat-account/wechat-account.service';
 
 @Controller('wechat')
 export class WechatController {
   constructor(
     private wechatService: WechatService,
+    private wechatAccountService: WechatAccountService,
     private chatSession: ChatSessionService,
   ) {}
   @Post('start')
@@ -53,11 +55,15 @@ export class WechatController {
   @Get('chat-sessions')
   async getChats(@Query('wechat_id') wechatId: string) {
     try {
-      const chats =
+      const wechatAccount =
+        await this.wechatService.getAccountWithLoginState(wechatId);
+
+      const chatSessions =
         await this.chatSession.getAllChatSessionsOfWechatId(wechatId);
 
       return {
-        data: chats,
+        chatSessions,
+        wechatAccount,
       };
     } catch (error) {
       console.log(error);

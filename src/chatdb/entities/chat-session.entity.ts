@@ -7,6 +7,7 @@ import {
   OneToMany,
   ManyToMany,
   JoinTable,
+  OneToOne,
 } from 'typeorm';
 import { WechatAccount } from './wechat-account.entity';
 import { Friend } from './friend.entity';
@@ -15,6 +16,7 @@ import { HistoryMessage } from './history-message.entity';
 const FeatureFlags = {
   GptCompletionFeature: 1 << 0,
   AutoReplyFeature: 1 << 1,
+  FastAutoReplyFeature: 1 << 2,
 };
 @Entity('chat_sessions')
 export class ChatSession {
@@ -28,8 +30,14 @@ export class ChatSession {
   })
   conversationId: string;
 
-  @ManyToOne(() => WechatAccount, (account) => account.sessions)
-  @JoinColumn({ name: 'wechat_account_id' })
+  @ManyToOne(() => WechatAccount, (account) => account.sessions, {
+    nullable: false,
+  })
+  @JoinColumn({
+    name: 'wechat_account_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_chat_session_wechat_account',
+  })
   wechatAccount: WechatAccount;
 
   @ManyToMany(() => Friend, (friend) => friend.sessions, {
@@ -61,6 +69,25 @@ export class ChatSession {
   get hasAutoReplyFeature(): boolean {
     return Boolean(this.featureFlags & FeatureFlags.AutoReplyFeature);
   }
+
+  get hasFastAutoReplyFeature(): boolean {
+    return Boolean(this.featureFlags & FeatureFlags.FastAutoReplyFeature);
+  }
+
+  @OneToOne(
+    () => HistoryMessage,
+    (historyMessage) => historyMessage.replyingChatSession,
+    {
+      nullable: true,
+      cascade: true,
+    },
+  )
+  @JoinColumn({
+    name: 'reply_owner_message_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_chat_session_reply_owner_message',
+  })
+  replyOwnerMessage: HistoryMessage | null;
 
   @OneToMany(
     () => HistoryMessage,

@@ -26,10 +26,8 @@ export class WechatAccount {
   @OneToOne(() => PadLocalToken, (token) => token.wechatAccount, {
     nullable: true,
   })
-  @JoinColumn({ name: 'pad_local_token_id' })
   padLocalToken: PadLocalToken | null;
 
   @OneToMany(() => ChatSession, (session) => session.wechatAccount)
-  @JoinColumn({ name: 'chat_session_id' })
   sessions: ChatSession[];
 }

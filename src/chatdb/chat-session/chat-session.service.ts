@@ -85,10 +85,11 @@ export class ChatSessionService {
     });
   }
 
-  async checkChatSessionIsRepliedSince(
+  async checkChatSessionNeedReplySince(
     sessionId: number,
     sinceTime: Date,
     replierId: string,
+    replyOwnerId: number,
   ) {
     try {
       const result = await this.historyMessageRepository.count({
@@ -98,7 +99,17 @@ export class ChatSessionService {
           senderId: replierId,
         },
       });
-      return Boolean(result);
+      if (result === 0) {
+        return await this.chatSessionRepository.exist({
+          where: {
+            id: sessionId,
+            replyOwnerMessage: {
+              id: replyOwnerId,
+            },
+          },
+        });
+      }
+      return !result;
     } catch (error) {
       console.error(`query chat session history error: ${error}`);
       return false;
@@ -121,8 +132,11 @@ export class ChatSessionService {
         entityManager.getRepository(HistoryMessage);
 
       // Find the chat session
-      let chatSession = await chatSessionRepository.findOne({
+      const chatSession = await chatSessionRepository.findOne({
         where: { conversationId },
+        relations: {
+          historyMessages: true,
+        },
       });
 
       if (!chatSession) {
@@ -141,19 +155,20 @@ export class ChatSessionService {
         sendTime,
       });
 
-      // Re-fetch the chat session to include the new message
-      chatSession = await chatSessionRepository.findOne({
-        where: { id: chatSession.id },
-        relations: {
-          historyMessages: true,
-        },
+      await chatSessionRepository.update(chatSession.id, {
+        replyOwnerMessage: message,
       });
+
+      chatSession.historyMessages.push(message);
+      chatSession.replyOwnerMessage = message;
 
       if (!chatSession) {
         throw new NotFoundException('chat session not found');
       }
 
-      return chatSession;
+      message.chatSession = chatSession;
+
+      return message;
     });
   }
 
@@ -169,7 +184,12 @@ export class ChatSessionService {
           wechatId,
         },
       },
-      relations: ['wechatAccount', 'historyMessages', 'friends'],
+      relations: {
+        wechatAccount: true,
+        friends: true,
+        historyMessages: true,
+        replyOwnerMessage: true,
+      },
     });
   }
 

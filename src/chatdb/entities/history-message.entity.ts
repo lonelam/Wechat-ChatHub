@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToOne,
+} from 'typeorm';
 import { ChatSession } from './chat-session.entity';
 
 @Entity('history_messages')
@@ -27,6 +34,23 @@ export class HistoryMessage {
   @Column('timestamp', { name: 'send_time' })
   sendTime: Date;
 
-  @ManyToOne(() => ChatSession, (session) => session.historyMessages)
+  @ManyToOne(() => ChatSession, (session) => session.historyMessages, {
+    nullable: false,
+  })
+  @JoinColumn({
+    name: 'chat_session_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_chat_session_history_message',
+  })
   chatSession: ChatSession;
+
+  @OneToOne(() => ChatSession, (session) => session.replyOwnerMessage, {
+    nullable: true,
+  })
+  @JoinColumn({
+    name: 'replying_chat_session_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'fk_replying_chat_session_history_message',
+  })
+  replyingChatSession: ChatSession | null;
 }

@@ -27,11 +27,13 @@ export class WechatService implements OnModuleDestroy {
     private friendService: FriendService,
     private openAIService: OpenAIService,
   ) {
-    this.padLocalToken.cleanPadLocalOccupations().then((isLoginState) => {
-      if (isLoginState) {
-        this.startWechatBot().catch(console.error);
-      }
+    // this.padLocalToken.cleanPadLocalOccupations().then(() => {
+    this.padLocalToken.getAllOccupiedToken().then((token) => {
+      token.forEach((t) => {
+        this.startWechatBotByTokenId(t.token).catch(console.error);
+      });
     });
+    // });
   }
 
   async onModuleDestroy() {
@@ -48,36 +50,14 @@ export class WechatService implements OnModuleDestroy {
     return this.botMap.get(botId);
   }
 
-  async startWechatBot() {
-    if (this.hangingBots.length > 0) {
-      for (let i = 0; i < this.hangingBots.length; i++) {
-        if (this.hangingBots[i].authQrCode) {
-          return {
-            bot: this.hangingBots[i],
-            qrcode: this.hangingBots[i].authQrCode,
-          };
-        }
-      }
-    }
-
+  async startWechatBotByTokenId(padLocalToken: string) {
     return new Promise<{ qrcode: string; bot: WechatyInterface }>(
       async (resolve, reject) => {
-        const token = await this.padLocalToken.getUnassignedToken();
-        if (!token) {
-          reject(
-            new HttpException(
-              'No available pad local token',
-              HttpStatus.TOO_MANY_REQUESTS,
-            ),
-          );
-          return;
-        }
-        console.log('token', token);
         const buildOptions: WechatyOptions = {
           name: 'run/Chathub',
           puppet: 'wechaty-puppet-padlocal',
           puppetOptions: {
-            token: token.token,
+            token: padLocalToken,
           },
         };
         const bot = WechatyBuilder.build(buildOptions);
@@ -135,7 +115,7 @@ export class WechatService implements OnModuleDestroy {
               avatarUrl,
             );
             if (account) {
-              this.wechatAccount.bindAccountToToken(user.id, token.token);
+              this.wechatAccount.bindAccountToToken(user.id, padLocalToken);
             }
           } catch (error) {
             console.error('error ', error);
@@ -147,93 +127,110 @@ export class WechatService implements OnModuleDestroy {
             this.activeBots.splice(this.activeBots.indexOf(bot), 1);
           }
           if (this.wechatAccount) {
-            this.wechatAccount.unbindAccountFromToken(user.id, token.token);
+            this.wechatAccount.unbindAccountFromToken(user.id, padLocalToken);
           }
           this.hangingBots.push(bot);
         });
         bot.on('message', async (msg) => {
-          const isText = msg.type() === bot.Message.Type.Text;
-          if (!isText) {
-            // for other message types, ignore
-            console.log('ignore message type:' + msg.type(), msg);
-            return;
-          }
-
-          const listener = msg.listener();
-          const talker = msg.talker();
-          if (!listener) {
-            // room message, ignore
-            console.log('ignore room message', msg);
-            return;
-          }
-
-          if (!talker) {
-            // room message, ignore
-            console.log('ignore room message', msg);
-            return;
-          }
-
-          if (msg.self()) {
-            // TODO: 额外处理自己发过来的命令
-          }
-
-          const chatter = msg.self() ? listener : talker;
-          const selfContact = msg.self() ? talker : listener;
-          if (!chatter) {
-            throw new InternalServerErrorException('chatter not found');
-          }
-          if (!selfContact) {
-            throw new InternalServerErrorException('selfContact not found');
-          }
-
-          const chatterInfo =
-            await this.friendService.getOrCreateFriendByFriendId(
-              chatter.id,
-              chatter.name(),
-              chatter.gender(),
-              (await chatter.alias()) || chatter.name(),
-              chatter.payload?.avatar || '',
-            );
-          const conversationId = chatter.id;
-          let chatSession = await this.chatSession.getOrCreateChatSession(
-            selfContact.id,
-            conversationId,
-            chatterInfo,
-          );
-          chatSession = await this.chatSession.addMessageToChatSession(
-            conversationId,
-            selfContact.id,
-            msg.type(),
-            msg.text(),
-            talker.id,
-            listener.id,
-            bot.id,
-            msg.date(),
-          );
-          // 自己的消息就不要尝试自动回复了
-          if (!msg.self()) {
-            const completionPromise =
-              this.openAIService.generateCompletion(chatSession);
-
-            if (chatSession.hasAutoReplyFeature) {
-              setTimeout(
-                async () => {
-                  const isReplied =
-                    await this.chatSession.checkChatSessionIsRepliedSince(
-                      chatSession.id,
-                      msg.date(),
-                      selfContact.id,
-                    );
-                  if (!isReplied) {
-                    const completion = await completionPromise;
-                    if (completion) {
-                      msg.say(completion);
-                    }
-                  }
-                },
-                (1 * 60 + 30 * Math.random()) * 1000,
+          try {
+            const isText = msg.type() === bot.Message.Type.Text;
+            if (!isText) {
+              // for other message types, ignore
+              console.log(
+                'ignore message' + msg.id,
+                'from ' + msg.room()?.payload,
               );
+              return;
             }
+
+            const listener = msg.listener();
+            const talker = msg.talker();
+            if (!listener) {
+              // room message, ignore
+              console.log(
+                'ignore room message',
+                msg.id,
+                'from',
+                msg.room()?.id,
+              );
+              return;
+            }
+
+            if (!talker) {
+              // room message, ignore
+              // console.log('ignore room message', msg);
+              return;
+            }
+
+            if (msg.self()) {
+              // TODO: 额外处理自己发过来的命令
+            }
+
+            const chatter = msg.self() ? listener : talker;
+            const selfContact = msg.self() ? talker : listener;
+            if (!chatter) {
+              throw new InternalServerErrorException('chatter not found');
+            }
+            if (!selfContact) {
+              throw new InternalServerErrorException('selfContact not found');
+            }
+
+            const chatterInfo =
+              await this.friendService.getOrCreateFriendByFriendId(
+                chatter.id,
+                chatter.name(),
+                chatter.gender(),
+                (await chatter.alias()) || chatter.name(),
+                chatter.payload?.avatar || '',
+              );
+            const conversationId = chatter.id;
+            let chatSession = await this.chatSession.getOrCreateChatSession(
+              selfContact.id,
+              conversationId,
+              chatterInfo,
+            );
+            const historyMessage =
+              await this.chatSession.addMessageToChatSession(
+                conversationId,
+                selfContact.id,
+                msg.type(),
+                msg.text(),
+                talker.id,
+                listener.id,
+                bot.id,
+                msg.date(),
+              );
+            chatSession = historyMessage.chatSession;
+            // 自己的消息就不要尝试自动回复了
+            if (!msg.self()) {
+              const completionPromise =
+                this.openAIService.generateCompletion(chatSession);
+
+              if (chatSession.hasAutoReplyFeature) {
+                setTimeout(
+                  async () => {
+                    const completion = await completionPromise;
+                    const isReplied =
+                      await this.chatSession.checkChatSessionNeedReplySince(
+                        chatSession.id,
+                        msg.date(),
+                        selfContact.id,
+                        historyMessage.id,
+                      );
+                    if (!isReplied) {
+                      if (completion) {
+                        msg.say(completion);
+                      }
+                    }
+                  },
+                  chatSession.hasFastAutoReplyFeature
+                    ? 0
+                    : (1 * 60 + 30 * Math.random()) * 1000,
+                );
+              }
+            }
+          } catch (err) {
+            console.error(`Handling message error: ${err}`);
           }
         });
         bot.on('error', (err) => {
@@ -245,6 +242,50 @@ export class WechatService implements OnModuleDestroy {
         console.log(`bot ${bot.id} started ...`);
       },
     );
+  }
+
+  async startWechatBot() {
+    if (this.hangingBots.length > 0) {
+      for (let i = 0; i < this.hangingBots.length; i++) {
+        if (this.hangingBots[i].authQrCode) {
+          return {
+            bot: this.hangingBots[i],
+            qrcode: this.hangingBots[i].authQrCode,
+          };
+        }
+      }
+    }
+
+    const token = await this.padLocalToken.getUnassignedToken();
+    if (!token) {
+      throw new HttpException(
+        'No available pad local token',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    console.log('token', token);
+    return this.startWechatBotByTokenId(token.token);
+  }
+
+  async getAccountWithLoginState(wechatId: string) {
+    const account =
+      await this.wechatAccount.getWechatAccountByWechatId(wechatId);
+    if (!account) {
+      return null;
+    }
+    for (const bot of this.activeBots) {
+      if (bot.isLoggedIn && bot.currentUser.id === account.wechatId) {
+        return {
+          ...account,
+          isLogin: true,
+        };
+      }
+    }
+
+    return {
+      ...account,
+      isLogin: false,
+    };
   }
 
   async getAllAccountsWithLoginState() {

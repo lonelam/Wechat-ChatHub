@@ -22,40 +22,24 @@ export class PadLocalTokenService {
     });
   }
 
-  async cleanPadLocalOccupations(): Promise<boolean> {
-    let loginWechatCnt = 0;
-    await this.dataSource.transaction(async (entityManager) => {
-      const occupations = await entityManager.find(PadLocalToken, {
-        where: {
-          isOccupied: true,
-        },
-        lock: {
-          mode: 'pessimistic_write',
-        },
-        relations: ['wechatAccount'],
-      });
-      const savePromises = occupations.map(async (occupation) => {
-        if (occupation.wechatAccount) {
-          loginWechatCnt++;
-        }
-        occupation.isOccupied = false;
-        occupation.wechatAccount = null;
-        return entityManager.save(occupation);
-      });
-      await Promise.all(savePromises);
-    });
+  async cleanPadLocalOccupations() {
     await this.padLocalTokenRepository.update(
       {},
       {
         isOccupied: false,
-        wechatAccount: null,
       },
     );
-    return Boolean(loginWechatCnt);
   }
 
   async deactivateToken(tokenId: number): Promise<void> {
     await this.padLocalTokenRepository.update(tokenId, { isActive: false });
+  }
+  async getAllOccupiedToken(): Promise<PadLocalToken[]> {
+    return this.padLocalTokenRepository.find({
+      where: {
+        isOccupied: true,
+      },
+    });
   }
   async getUnassignedToken(): Promise<PadLocalToken | null> {
     return this.dataSource.transaction(
@@ -65,9 +49,9 @@ export class PadLocalTokenService {
           .getRepository(PadLocalToken)
           .createQueryBuilder('token')
           .setLock('pessimistic_write') // Using pessimistic locking
-          .leftJoinAndSelect('token.wechatAccount', 'account')
-          .where('account.id IS NULL')
-          .andWhere('token.isActive = :isActive', { isActive: true })
+          // .leftJoinAndSelect('token.wechatAccount', 'account')
+          // .where('account.id IS NULL')
+          .where('token.isActive = :isActive', { isActive: true })
           .andWhere('token.isOccupied = :isOccupied', { isOccupied: false })
           .getOne();
 
