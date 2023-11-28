@@ -12,7 +12,7 @@ export class HistoryMessage {
   @Column()
   type: number; // Assuming 'type' is a string describing the message type
 
-  @Column({ name: 'text_content' })
+  @Column('text', { name: 'text_content' })
   textContent: string;
 
   @Column()
@@ -24,7 +24,7 @@ export class HistoryMessage {
   @Column()
   source: string; // Source can be an identifier for where the message originated
 
-  @Column({ type: 'timestamp', name: 'send_time' })
+  @Column('timestamp', { name: 'send_time' })
   sendTime: Date;
 
   @ManyToOne(() => ChatSession, (session) => session.historyMessages)
