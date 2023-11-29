@@ -3,6 +3,7 @@ import { ChatSession } from 'src/chatdb/entities/chat-session.entity';
 import { OpenAITokenService } from 'src/chatdb/open-ai-token/open-ai-token.service';
 import { ClientOptions, OpenAI } from 'openai';
 import { ChatSessionService } from 'src/chatdb/chat-session/chat-session.service';
+import { getBeijingTime } from 'src/utils';
 @Injectable()
 export class OpenAIService {
   constructor(
@@ -50,7 +51,12 @@ export class OpenAIService {
 
   async generateCompletion(chatSession: ChatSession) {
     const openai = await this.getOpenAI();
-    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      {
+        role: 'system',
+        content: `现在是北京时间 ${getBeijingTime()}`,
+      },
+    ];
     if (chatSession.systemMessage) {
       messages.push({
         role: 'system',

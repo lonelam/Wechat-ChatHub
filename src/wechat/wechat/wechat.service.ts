@@ -216,14 +216,14 @@ export class WechatService implements OnModuleDestroy {
                           .slice(0, 20)}" from ${chatterAlias}`,
                       );
                       const completion = await completionPromise;
-                      const isReplied =
+                      const needReply =
                         await this.chatSession.checkChatSessionNeedReplySince(
                           chatSession.id,
                           msg.date(),
                           selfContact.id,
                           historyMessage.id,
                         );
-                      if (!isReplied) {
+                      if (needReply) {
                         if (completion) {
                           console.log(
                             `AutoReply:  ${completion} => ${chatterAlias}`,
