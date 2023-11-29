@@ -10,6 +10,10 @@ export class OpenAITokenService {
     private openAITokenRepository: Repository<OpenAIToken>,
   ) {}
 
+  async updateToken(token: OpenAIToken) {
+    return this.openAITokenRepository.save(token);
+  }
+
   async addToken(tokenValue: string): Promise<OpenAIToken> {
     const token = this.openAITokenRepository.create({ token: tokenValue });
     return this.openAITokenRepository.save(token);

@@ -4,13 +4,14 @@ import { OpenAITokenService } from 'src/chatdb/open-ai-token/open-ai-token.servi
 import { ClientOptions, OpenAI } from 'openai';
 import { ChatSessionService } from 'src/chatdb/chat-session/chat-session.service';
 import { getBeijingTime } from 'src/utils';
+import { OpenAIToken } from 'src/chatdb/entities/open-ai-token.entity';
 @Injectable()
 export class OpenAIService {
   constructor(
     private openaiToken: OpenAITokenService,
     private chatSessionService: ChatSessionService,
   ) {}
-  private _activeToken: string = '';
+  private _activeToken: OpenAIToken | null = null;
   async getActiveToken() {
     if (this._activeToken) {
       return this._activeToken;
@@ -19,8 +20,9 @@ export class OpenAIService {
     if (!activeTokens.length) {
       throw new NotFoundException('No active tokens found');
     }
-    return (this._activeToken =
-      activeTokens[(Math.random() * activeTokens.length) | 0].token);
+    this._activeToken =
+      activeTokens[(Math.random() * activeTokens.length) | 0] || null;
+    return this._activeToken;
   }
 
   private _openai: OpenAI | null = null;
@@ -35,9 +37,11 @@ export class OpenAIService {
       this._openaiCreation = new Promise<OpenAI>(async (resolve) => {
         const token = await this.getActiveToken();
         const config: ClientOptions = {
-          apiKey: token,
+          apiKey: token.token,
         };
-        if (process.env.NODE_ENV === 'development') {
+        if (token.baseUrl) {
+          config.baseURL = token.baseUrl;
+        } else if (process.env.NODE_ENV === 'development') {
           config.baseURL = 'https://aiproxy.laizn.com/v1';
         }
 

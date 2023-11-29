@@ -10,4 +10,7 @@ export class OpenAIToken {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @Column({ default: '' })
+  baseUrl: string;
 }
