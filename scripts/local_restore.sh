@@ -11,7 +11,7 @@ ARCHIVE_NAME=chathub_db_data.tar.gz
 NEW_VOLUME_NAME=chathub_db_data
 
 # SCP command to transfer the archive from the remote server
-scp $REMOTE_USER@$REMOTE_HOST:path/to/$ARCHIVE_NAME .
+scp $REMOTE_USER@$REMOTE_HOST:/tmp/$ARCHIVE_NAME .
 
 # Creating a new Docker volume
 docker volume create $NEW_VOLUME_NAME

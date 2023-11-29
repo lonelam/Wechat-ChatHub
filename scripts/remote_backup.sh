@@ -10,6 +10,6 @@ VOLUME_MOUNTPOINT=$(docker volume inspect $VOLUME_NAME | grep Mountpoint | cut -
 ARCHIVE_NAME=chathub_db_data.tar.gz
 
 # Creating a compressed archive of the volume
-tar czvf $ARCHIVE_NAME $VOLUME_MOUNTPOINT
+tar czvf /tmp/$ARCHIVE_NAME $VOLUME_MOUNTPOINT
 
 echo "Archive created: $ARCHIVE_NAME"
