@@ -11,7 +11,7 @@ ARCHIVE_NAME=chathub_db_data.tar.gz
 NEW_VOLUME_NAME=chathub_db_data
 
 # SCP command to transfer the archive from the remote server
-scp $REMOTE_USER@$REMOTE_HOST:/tmp/$ARCHIVE_NAME .
+scp $REMOTE_USER@$REMOTE_HOST:/tmp/$ARCHIVE_NAME /tmp/$ARCHIVE_NAME
 
 # Creating a new Docker volume
 docker volume create $NEW_VOLUME_NAME
@@ -19,7 +19,9 @@ docker volume create $NEW_VOLUME_NAME
 # Finding the new volume's mount point
 NEW_VOLUME_MOUNTPOINT=$(docker volume inspect $NEW_VOLUME_NAME | grep Mountpoint | cut -d '"' -f 4)
 
+cd $NEW_VOLUME_MOUNTPOINT
+
 # Extracting the archive into the new volume's mount point
-sudo tar xzvf $ARCHIVE_NAME -C $NEW_VOLUME_MOUNTPOINT
+sudo tar xzvf /tmp/$ARCHIVE_NAME
 
 echo "Volume restored: $NEW_VOLUME_NAME"
