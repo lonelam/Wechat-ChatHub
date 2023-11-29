@@ -29,6 +29,10 @@ export class OpenAIService {
 
   private _openaiCreation: Promise<OpenAI> | null = null;
 
+  cleanToken() {
+    this._activeToken = null;
+  }
+
   async getOpenAI() {
     if (!this._openai) {
       if (this._openaiCreation) {

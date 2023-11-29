@@ -14,12 +14,14 @@ import { OpenAIToken } from 'src/chatdb/entities/open-ai-token.entity';
 import { PadLocalToken } from 'src/chatdb/entities/pad-local-token.entity';
 import { OpenAITokenService } from 'src/chatdb/open-ai-token/open-ai-token.service';
 import { PadLocalTokenService } from 'src/chatdb/pad-local-token/pad-local-token.service';
+import { OpenAIService } from 'src/gpt/openai/openai.service';
 
 @Controller('token')
 export class TokenController {
   constructor(
     private openAIToken: OpenAITokenService,
     private padLocalToken: PadLocalTokenService,
+    private openAIService: OpenAIService,
   ) {}
 
   @Post('create/openai')
@@ -99,6 +101,7 @@ export class TokenController {
     switch (type) {
       case 'openai': {
         let token = await this.openAIToken.getTokenById(parsedId);
+        this.openAIService.cleanToken();
         if (!token) {
           throw new NotFoundException(`Token with id ${id} not found`);
         }
