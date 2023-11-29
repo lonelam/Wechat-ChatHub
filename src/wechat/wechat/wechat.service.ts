@@ -30,7 +30,7 @@ export class WechatService implements OnModuleDestroy {
     // this.padLocalToken.cleanPadLocalOccupations().then(() => {
     this.padLocalToken.getAllOccupiedToken().then((token) => {
       token.forEach((t) => {
-        if (t.isActive) {
+        if (process.env.NODE_ENV !== 'development' && t.isActive) {
           this.startWechatBotByTokenId(t.token).catch(console.error);
         }
       });
