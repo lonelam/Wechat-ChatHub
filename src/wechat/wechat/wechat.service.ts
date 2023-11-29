@@ -138,10 +138,7 @@ export class WechatService implements OnModuleDestroy {
             const isText = msg.type() === bot.Message.Type.Text;
             if (!isText) {
               // for other message types, ignore
-              console.log(
-                'ignore message' + msg.id,
-                'from ' + JSON.stringify(msg.room()?.payload),
-              );
+              console.log('ignore non-text message ' + msg.id);
               return;
             }
 
