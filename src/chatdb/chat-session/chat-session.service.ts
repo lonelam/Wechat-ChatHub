@@ -44,6 +44,19 @@ export class ChatSessionService {
       throw new NotFoundException(`the conversation with id ${id} not found`);
     }
   }
+
+  getChatSessionById(sessionId: number) {
+    return this.chatSessionRepository.findOne({
+      where: { id: sessionId },
+      relations: {
+        friends: true,
+        wechatAccount: true,
+        historyMessages: true,
+        replyOwnerMessage: true,
+      },
+    });
+  }
+
   async getOrCreateChatSession(
     wechatId: string,
     conversationId: string,
@@ -57,7 +70,12 @@ export class ChatSessionService {
       // Find the chat session
       const chatSession = await chatSessionRepository.findOne({
         where: { conversationId },
-        relations: ['friends', 'wechatAccount'], // Assuming you want to load these relations
+        relations: {
+          friends: true,
+          wechatAccount: true,
+          historyMessages: true,
+          replyOwnerMessage: true,
+        },
       });
 
       // If the chat session exists, update it
@@ -174,7 +192,10 @@ export class ChatSessionService {
 
   async updateActiveMessage(chatSession: ChatSession, activeMessage: string) {
     chatSession.activeMessage = activeMessage;
-    return await this.chatSessionRepository.save(chatSession);
+    await this.chatSessionRepository.update(chatSession.id, {
+      activeMessage,
+    });
+    return chatSession;
   }
 
   async getAllChatSessionsOfWechatId(wechatId: string) {

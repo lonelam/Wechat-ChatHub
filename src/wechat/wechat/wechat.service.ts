@@ -30,7 +30,9 @@ export class WechatService implements OnModuleDestroy {
     // this.padLocalToken.cleanPadLocalOccupations().then(() => {
     this.padLocalToken.getAllOccupiedToken().then((token) => {
       token.forEach((t) => {
-        this.startWechatBotByTokenId(t.token).catch(console.error);
+        if (t.isActive) {
+          this.startWechatBotByTokenId(t.token).catch(console.error);
+        }
       });
     });
     // });
@@ -138,7 +140,7 @@ export class WechatService implements OnModuleDestroy {
               // for other message types, ignore
               console.log(
                 'ignore message' + msg.id,
-                'from ' + msg.room()?.payload,
+                'from ' + JSON.stringify(msg.room()?.payload),
               );
               return;
             }
@@ -168,6 +170,7 @@ export class WechatService implements OnModuleDestroy {
 
             const chatter = msg.self() ? listener : talker;
             const selfContact = msg.self() ? talker : listener;
+            const chatterAlias = (await chatter.alias()) || chatter.name();
             if (!chatter) {
               throw new InternalServerErrorException('chatter not found');
             }
@@ -180,7 +183,7 @@ export class WechatService implements OnModuleDestroy {
                 chatter.id,
                 chatter.name(),
                 chatter.gender(),
-                (await chatter.alias()) || chatter.name(),
+                chatterAlias,
                 chatter.payload?.avatar || '',
               );
             const conversationId = chatter.id;
@@ -209,18 +212,30 @@ export class WechatService implements OnModuleDestroy {
               if (chatSession.hasAutoReplyFeature) {
                 setTimeout(
                   async () => {
-                    const completion = await completionPromise;
-                    const isReplied =
-                      await this.chatSession.checkChatSessionNeedReplySince(
-                        chatSession.id,
-                        msg.date(),
-                        selfContact.id,
-                        historyMessage.id,
+                    try {
+                      console.log(
+                        `Start fetching completion for the msg "${msg
+                          .text()
+                          .slice(0, 20)}" from ${chatterAlias}`,
                       );
-                    if (!isReplied) {
-                      if (completion) {
-                        msg.say(completion);
+                      const completion = await completionPromise;
+                      const isReplied =
+                        await this.chatSession.checkChatSessionNeedReplySince(
+                          chatSession.id,
+                          msg.date(),
+                          selfContact.id,
+                          historyMessage.id,
+                        );
+                      if (!isReplied) {
+                        if (completion) {
+                          console.log(
+                            `AutoReply:  ${completion} => ${chatterAlias}`,
+                          );
+                          msg.say(completion);
+                        }
                       }
+                    } catch (err) {
+                      console.error(`AutoReply Completion error: ${err}`);
                     }
                   },
                   chatSession.hasFastAutoReplyFeature
@@ -306,6 +321,27 @@ export class WechatService implements OnModuleDestroy {
       };
     });
     return accounts;
+  }
+
+  async gptCompleteForActiveMessageBySessionId(sessionId: number) {
+    let chatSession = await this.chatSession.getChatSessionById(sessionId);
+    if (!chatSession) {
+      throw new NotFoundException(`ChatSession not found by id: ${sessionId}`);
+    }
+    const completion = await this.openAIService.generateCompletion(chatSession);
+    if (completion) {
+      chatSession = await this.chatSession.updateActiveMessage(
+        chatSession,
+        completion,
+      );
+      console.log(
+        `chat updated ["${completion.slice(
+          0,
+          100,
+        )}"] for chat: ${JSON.stringify(chatSession.friends)}`,
+      );
+    }
+    return chatSession;
   }
 
   async sayToListener(text: string, listenerId: string, wechatId: string) {

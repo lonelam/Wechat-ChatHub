@@ -71,6 +71,17 @@ export class WechatController {
     }
   }
 
+  @Post('complete-chat-session')
+  async completeChatSession(@Body() body: { sessionId: number }) {
+    const chatSession =
+      await this.wechatService.gptCompleteForActiveMessageBySessionId(
+        body.sessionId,
+      );
+    return {
+      data: chatSession,
+    };
+  }
+
   @Get('accounts')
   async getAccounts() {
     try {
