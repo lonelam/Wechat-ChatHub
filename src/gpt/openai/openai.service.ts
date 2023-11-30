@@ -103,7 +103,7 @@ export class OpenAIService {
     }
 
     // 倒序排列
-    const revHistory = chatSession.historyMessages.sort((a, b) => {
+    const revHistory = chatSession.historyMessages.toSorted((a, b) => {
       return b.sendTime.valueOf() - a.sendTime.valueOf();
     });
 
