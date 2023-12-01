@@ -12,6 +12,7 @@ import {
 import { WechatAccount } from './wechat-account.entity';
 import { Friend } from './friend.entity';
 import { HistoryMessage } from './history-message.entity';
+import { User } from './user.entity';
 
 const FeatureFlags = {
   GptCompletionFeature: 1 << 0,
@@ -22,6 +23,20 @@ const FeatureFlags = {
 export class ChatSession {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @ManyToOne(() => User, {
+    nullable: true,
+    cascade: true,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({
+    name: 'owner_id',
+    referencedColumnName: 'id',
+  })
+  owner: User | null;
+
+  @Column({ name: 'owner_id', default: -1 })
+  ownerId: number;
 
   @Column({
     type: 'varchar',

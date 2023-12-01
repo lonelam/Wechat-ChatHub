@@ -7,6 +7,11 @@ import { WechatModule } from './wechat/wechat.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TokenModule } from './token/token.module';
+import { AuthModule } from './auth/auth.module';
+import { UserManagementModule } from './user-management/user-management.module';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './auth/roles.guard';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
@@ -19,6 +24,7 @@ import { TokenModule } from './token/token.module';
     GptModule,
     ChatdbModule,
     WechatModule,
+    PassportModule.register({ defaultStrategy: 'local', session: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
@@ -41,8 +47,16 @@ import { TokenModule } from './token/token.module';
       inject: [ConfigService],
     }),
     TokenModule,
+    AuthModule,
+    UserManagementModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
+  ],
 })
 export class AppModule {}

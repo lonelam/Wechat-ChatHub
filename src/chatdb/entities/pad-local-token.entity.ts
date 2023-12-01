@@ -4,13 +4,29 @@ import {
   Column,
   OneToOne,
   JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { WechatAccount } from './wechat-account.entity';
+import { User } from './user.entity';
 
 @Entity('pad_local_tokens')
 export class PadLocalToken {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @ManyToOne(() => User, {
+    nullable: true,
+    cascade: true,
+    createForeignKeyConstraints: false,
+  })
+  @JoinColumn({
+    name: 'owner_id',
+    referencedColumnName: 'id',
+  })
+  owner: User | null;
+
+  @Column({ name: 'owner_id', default: -1 })
+  ownerId: number;
 
   @Column({ unique: true })
   token: string;
@@ -35,4 +51,9 @@ export class PadLocalToken {
     default: false,
   })
   isOccupied: boolean;
+
+  @Column({
+    default: 'wechaty-puppet-padlocal',
+  })
+  puppetType: string;
 }

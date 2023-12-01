@@ -12,10 +12,15 @@ import { OpenAIToken } from './entities/open-ai-token.entity';
 import { PadLocalToken } from './entities/pad-local-token.entity';
 import { WechatAccount } from './entities/wechat-account.entity';
 import { HistoryMessage } from './entities/history-message.entity';
+import { UserService } from './user/user.service';
+import { User } from './entities/user.entity';
+import { Role } from './entities/role.entity';
 @Module({
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([
+      User,
+      Role,
       ChatSession,
       Friend,
       OpenAIToken,
@@ -30,6 +35,7 @@ import { HistoryMessage } from './entities/history-message.entity';
     ChatSessionService,
     WechatAccountService,
     OpenAITokenService,
+    UserService,
   ],
   exports: [
     FriendService,
@@ -37,6 +43,7 @@ import { HistoryMessage } from './entities/history-message.entity';
     ChatSessionService,
     WechatAccountService,
     OpenAITokenService,
+    UserService,
   ],
 })
 export class ChatdbModule {}
