@@ -25,10 +25,19 @@ export class ChatSessionService {
   ) {}
 
   async updateFeatureFlagsById(id: number, feature: number, ownerId?: number) {
-    const result = await this.chatSessionRepository.update(
-      { id, ownerId },
-      { featureFlags: feature },
-    );
+    let result;
+
+    if (ownerId) {
+      result = await this.chatSessionRepository.update(
+        { id, ownerId },
+        { featureFlags: feature },
+      );
+    } else {
+      result = await this.chatSessionRepository.update(
+        { id },
+        { featureFlags: feature },
+      );
+    }
     if (!result.affected) {
       throw new NotFoundException(`the conversation with id ${id} not found`);
     }
