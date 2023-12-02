@@ -8,6 +8,7 @@ import { User } from 'src/chatdb/entities/user.entity';
 import { OpenAITokenService } from 'src/chatdb/open-ai-token/open-ai-token.service';
 import { PadLocalTokenService } from 'src/chatdb/pad-local-token/pad-local-token.service';
 import { UserService } from 'src/chatdb/user/user.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -32,7 +33,15 @@ export class AuthService {
 
   async validateUser(username: string, pass: string): Promise<User | null> {
     const user = await this.userService.findUserByUsername(username);
-    if (user && user.password === pass) {
+    if (!user) {
+      return null;
+    }
+    if (!user.password) {
+      return user;
+    }
+
+    const isMatch = await bcrypt.compare(pass, user.password);
+    if (isMatch) {
       return user;
     }
     return null;
@@ -43,7 +52,8 @@ export class AuthService {
     if (user) {
       throw new BadRequestException('User already exists');
     }
-    const newUser = await this.userService.createUser(username, pass);
+    const hash = await bcrypt.hash(pass, 10);
+    const newUser = await this.userService.createUser(username, hash);
     const result = new UserDto(newUser);
     return result;
   }
@@ -55,7 +65,11 @@ export class AuthService {
     wechatyToken: string,
     wechatyType: string,
   ) {
-    const adminUser = await this.userService.intializeSuperUser(adminPassword);
+    let adminHash = '';
+    if (adminPassword) {
+      adminHash = await bcrypt.hash(adminPassword, 10);
+    }
+    const adminUser = await this.userService.intializeSuperUser(adminHash);
     if (!adminUser) {
       throw new InternalServerErrorException('初始化管理员失败');
     }

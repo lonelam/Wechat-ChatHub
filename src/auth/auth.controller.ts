@@ -13,6 +13,7 @@ import { AuthService } from './auth.service';
 import { promisify } from 'util';
 import { UserDto } from 'src/chatdb/dto/user';
 import { Public } from './roles.decorator';
+import * as bcrypt from 'bcrypt';
 
 @Controller('auth')
 export class AuthController {
