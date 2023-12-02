@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, DataSource } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { PadLocalToken } from '../entities/pad-local-token.entity';
 
 @Injectable()
@@ -11,15 +11,26 @@ export class PadLocalTokenService {
     private dataSource: DataSource,
   ) {}
 
-  async createToken(tokenValue: string): Promise<PadLocalToken> {
-    const token = this.padLocalTokenRepository.create({ token: tokenValue });
+  async createToken(
+    tokenValue: string,
+    puppetType: string,
+    ownerId: number,
+  ): Promise<PadLocalToken> {
+    const token = this.padLocalTokenRepository.create({
+      token: tokenValue,
+      puppetType,
+      ownerId,
+    });
     return this.padLocalTokenRepository.save(token);
   }
 
   async activateToken(tokenId: number): Promise<void> {
-    await this.padLocalTokenRepository.update(tokenId, {
+    const result = await this.padLocalTokenRepository.update(tokenId, {
       isActive: true,
     });
+    if (result.affected === 0) {
+      throw new NotFoundException(`Token with id ${tokenId} not found`);
+    }
   }
 
   async cleanPadLocalOccupations() {
@@ -76,6 +87,17 @@ export class PadLocalTokenService {
 
   async getAllTokens(): Promise<PadLocalToken[]> {
     return this.padLocalTokenRepository.find({
+      relations: {
+        wechatAccount: true,
+      },
+    });
+  }
+
+  async getOwnTokens(userId: number): Promise<PadLocalToken[]> {
+    return this.padLocalTokenRepository.find({
+      where: {
+        ownerId: userId,
+      },
       relations: {
         wechatAccount: true,
       },

@@ -12,6 +12,7 @@ import { Friend } from '../entities/friend.entity';
 import { OpenAIToken } from '../entities/open-ai-token.entity';
 import { PadLocalToken } from '../entities/pad-local-token.entity';
 import { WechatAccount } from '../entities/wechat-account.entity';
+import { HistoryMessage } from '../entities/history-message.entity';
 
 @Injectable()
 export class UserService {
@@ -30,10 +31,32 @@ export class UserService {
     private readonly padLocalTokenRepository: Repository<PadLocalToken>,
     @InjectRepository(WechatAccount)
     private readonly wechatAccountRepository: Repository<WechatAccount>,
+    @InjectRepository(HistoryMessage)
+    private readonly historyMessageRepository: Repository<HistoryMessage>,
   ) {}
 
   async findUserByUsername(username: string): Promise<User | null> {
     return await this.userRepository.findOne({ where: { username } });
+  }
+
+  async findUserById(id: number): Promise<User | null> {
+    return await this.userRepository.findOne({ where: { id } });
+  }
+
+  async createUser(username: string, password: string): Promise<User> {
+    const availableRoles = await this.getAllRoles();
+    if (availableRoles.length === 0) {
+      throw new InternalServerErrorException('No roles found');
+    }
+    const normalRole = availableRoles.find(
+      (role) => role.name === UserRole.NORMAL_USER,
+    ) as Role;
+
+    return await this.userRepository.save({
+      username,
+      password,
+      role: [normalRole],
+    });
   }
 
   async getAllRoles(): Promise<Role[]> {
@@ -121,7 +144,18 @@ export class UserService {
         },
       ),
     );
+    updatePromises.push(
+      this.historyMessageRepository.update(
+        {
+          ownerId: -1,
+        },
+        {
+          ownerId: superAdmin.id,
+        },
+      ),
+    );
     await Promise.all(updatePromises);
+
     return superAdmin;
   }
 }

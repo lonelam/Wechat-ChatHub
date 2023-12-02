@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -15,11 +16,15 @@ import { OpenAIService } from 'src/gpt/openai/openai.service';
 import { WechatyBuilder, WechatyOptions } from 'wechaty';
 import { ContactInterface, WechatyInterface } from 'wechaty/impls';
 
+// 5分钟离线就转给其他人
+const BOT_TIMEOUT_MS = 1000 * 60 * 5;
 @Injectable()
 export class WechatService implements OnModuleDestroy {
   activeBots: WechatyInterface[] = [];
   hangingBots: WechatyInterface[] = [];
   botMap: Map<string, WechatyInterface> = new Map();
+  botOwner: Map<string, number> = new Map();
+  botOwnTime: Map<string, number> = new Map();
   constructor(
     private padLocalToken: PadLocalTokenService,
     private wechatAccount: WechatAccountService,
@@ -30,8 +35,12 @@ export class WechatService implements OnModuleDestroy {
     // this.padLocalToken.cleanPadLocalOccupations().then(() => {
     this.padLocalToken.getAllOccupiedToken().then((token) => {
       token.forEach((t) => {
-        if (process.env.NODE_ENV !== 'development' && t.isActive) {
-          this.startWechatBotByTokenId(t.token).catch(console.error);
+        if (
+          process.env.NODE_ENV !== 'development' &&
+          t.isActive &&
+          t.ownerId !== -1
+        ) {
+          this.startWechatBotByTokenId(t.token, t.ownerId).catch(console.error);
         }
       });
     });
@@ -48,11 +57,22 @@ export class WechatService implements OnModuleDestroy {
     }
   }
 
-  getBot(botId: string) {
-    return this.botMap.get(botId);
+  getBot(botId: string, userId: number) {
+    const bot = this.botMap.get(botId);
+    if (!bot) {
+      return null;
+    }
+    // 说明已经超时，被另一个用户争用了，报错让返回
+    if (this.botOwner.get(botId) !== userId) {
+      return null;
+    }
+
+    this.botOwnTime.set(botId, Date.now());
+    this.botOwner.set(botId, userId);
+    return bot;
   }
 
-  async startWechatBotByTokenId(padLocalToken: string) {
+  async startWechatBotByTokenId(padLocalToken: string, userId: number) {
     return new Promise<{ qrcode: string; bot: WechatyInterface }>(
       async (resolve, reject) => {
         const buildOptions: WechatyOptions = {
@@ -65,6 +85,8 @@ export class WechatService implements OnModuleDestroy {
         const bot = WechatyBuilder.build(buildOptions);
 
         this.botMap.set(bot.id, bot);
+        this.botOwner.set(bot.id, userId);
+        this.botOwnTime.set(bot.id, Date.now());
         this.hangingBots.push(bot);
         let finished = false;
         const onScan = (qrcode: string) => {
@@ -111,11 +133,14 @@ export class WechatService implements OnModuleDestroy {
             //   avatarUrl = await (await user.avatar()).toDataURL();
             // }
 
+            const accountOwner = this.botOwner.get(bot.id);
             const account = await this.wechatAccount.getOrCreateWechatAccount(
               user.id,
               await user.name(),
               avatarUrl,
+              accountOwner || -1,
             );
+
             if (account) {
               this.wechatAccount.bindAccountToToken(user.id, padLocalToken);
             }
@@ -123,6 +148,7 @@ export class WechatService implements OnModuleDestroy {
             console.error('error ', error);
           }
         });
+
         bot.on('logout', async (user) => {
           console.log(`${user} logout`);
           if (this.activeBots.includes(bot)) {
@@ -175,6 +201,8 @@ export class WechatService implements OnModuleDestroy {
               throw new InternalServerErrorException('selfContact not found');
             }
 
+            const botOwnerId = this.botOwner.get(bot.id) || -1;
+
             const chatterInfo =
               await this.friendService.getOrCreateFriendByFriendId(
                 chatter.id,
@@ -182,12 +210,15 @@ export class WechatService implements OnModuleDestroy {
                 chatter.gender(),
                 chatterAlias,
                 chatter.payload?.avatar || '',
+                botOwnerId,
               );
+
             const conversationId = chatter.id;
             let chatSession = await this.chatSession.getOrCreateChatSession(
               selfContact.id,
               conversationId,
               chatterInfo,
+              botOwnerId,
             );
             const historyMessage =
               await this.chatSession.addMessageToChatSession(
@@ -199,6 +230,7 @@ export class WechatService implements OnModuleDestroy {
                 listener.id,
                 bot.id,
                 msg.date(),
+                botOwnerId,
               );
             chatSession = historyMessage.chatSession;
             // 自己的消息就不要尝试自动回复了
@@ -256,14 +288,23 @@ export class WechatService implements OnModuleDestroy {
     );
   }
 
-  async startWechatBot() {
+  async startWechatBot(userId: number) {
     if (this.hangingBots.length > 0) {
       for (let i = 0; i < this.hangingBots.length; i++) {
-        if (this.hangingBots[i].authQrCode) {
-          return {
-            bot: this.hangingBots[i],
-            qrcode: this.hangingBots[i].authQrCode,
-          };
+        const bot = this.hangingBots[i];
+        if (bot.authQrCode) {
+          const previousOwnTime = this.botOwnTime.get(bot.id) || 0;
+          if (
+            this.botOwner.get(bot.id) === userId ||
+            previousOwnTime + BOT_TIMEOUT_MS < Date.now()
+          ) {
+            this.botOwnTime.set(bot.id, Date.now());
+            this.botOwner.set(bot.id, userId);
+            return {
+              bot,
+              qrcode: bot.authQrCode,
+            };
+          }
         }
       }
     }
@@ -276,15 +317,23 @@ export class WechatService implements OnModuleDestroy {
       );
     }
     console.log('token', token);
-    return this.startWechatBotByTokenId(token.token);
+    return this.startWechatBotByTokenId(token.token, userId);
   }
 
-  async getAccountWithLoginState(wechatId: string) {
+  async getAccountWithLoginState(wechatId: string, userId: number) {
     const account =
       await this.wechatAccount.getWechatAccountByWechatId(wechatId);
     if (!account) {
       return null;
     }
+    // owner被抢走了，必须重新登录，此处视作离线，因为不会再发消息给他了
+    if (account.ownerId !== userId) {
+      return {
+        ...account,
+        isLogin: false,
+      };
+    }
+
     for (const bot of this.activeBots) {
       if (bot.isLoggedIn && bot.currentUser.id === account.wechatId) {
         return {
@@ -300,9 +349,9 @@ export class WechatService implements OnModuleDestroy {
     };
   }
 
-  async getAllAccountsWithLoginState() {
+  async getAllAccountsWithLoginState(ownerId: number) {
     const accounts: (WechatAccount & { isLogin: boolean })[] = (
-      await this.wechatAccount.getAllWechatAccounts()
+      await this.wechatAccount.getOwnWechatAccount(ownerId)
     ).map((account) => {
       for (const bot of this.activeBots) {
         if (bot.isLoggedIn && bot.currentUser.id === account.wechatId) {
@@ -341,22 +390,50 @@ export class WechatService implements OnModuleDestroy {
     return chatSession;
   }
 
-  async sayToListener(text: string, listenerId: string, wechatId: string) {
+  async sayToListener(
+    text: string,
+    listenerId: string,
+    wechatId: string,
+    userId: number,
+  ) {
     const bot = this.activeBots.find((b) => b.currentUser.id === wechatId);
     if (!bot) {
       throw new NotFoundException(`Bot not found by wechatID: ${wechatId}`);
+    }
+    if (this.botOwner.get(bot.id) !== userId) {
+      throw new ForbiddenException(
+        `Bot not authorized to say to listener: ${listenerId}`,
+      );
     }
     return ((bot.Contact as any).load(listenerId) as ContactInterface).say(
       text,
     );
   }
 
-  async logout(wechatId: string) {
+  async adminLogout(wechatId: string) {
     const logoutBot = this.activeBots.find(
       (b) => b.currentUser.id === wechatId,
     );
     if (!logoutBot) {
       throw new NotFoundException(`Bot not found by wechatID: ${wechatId}`);
+    }
+    this.activeBots = this.activeBots.filter(
+      (b) => b.currentUser.id !== wechatId,
+    );
+    this.botMap.delete(logoutBot.id);
+    await logoutBot.logout();
+    this.hangingBots.push(logoutBot);
+  }
+
+  async logout(wechatId: string, userId: number) {
+    const logoutBot = this.activeBots.find(
+      (b) => b.currentUser.id === wechatId,
+    );
+    if (!logoutBot) {
+      throw new NotFoundException(`Bot not found by wechatID: ${wechatId}`);
+    }
+    if (this.botOwner.get(logoutBot.id) !== userId) {
+      throw new ForbiddenException(`Bot not owned by user with id: ${userId}`);
     }
     this.activeBots = this.activeBots.filter(
       (b) => b.currentUser.id !== wechatId,

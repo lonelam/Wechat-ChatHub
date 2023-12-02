@@ -9,7 +9,7 @@ import { Role } from './role.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
-  USER = 'user',
+  NORMAL_USER = 'normal_user',
   ANONYMOUS = 'anonymous',
 }
 
@@ -43,8 +43,4 @@ export class User {
     },
   })
   roles: Role[];
-
-  getUserRoles(): UserRole[] {
-    return this.roles.map((r) => r.name as UserRole);
-  }
 }

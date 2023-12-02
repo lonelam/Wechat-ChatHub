@@ -24,7 +24,7 @@ import { PassportModule } from '@nestjs/passport';
     GptModule,
     ChatdbModule,
     WechatModule,
-    PassportModule.register({ defaultStrategy: 'local', session: true }),
+    // PassportModule.register({ defaultStrategy: 'local', session: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {

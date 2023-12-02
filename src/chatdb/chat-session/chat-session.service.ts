@@ -9,7 +9,6 @@ import { ChatSession } from '../entities/chat-session.entity';
 import { FriendService } from '../friend/friend.service';
 import { WechatAccountService } from '../wechat-account/wechat-account.service';
 import { Friend } from '../entities/friend.entity';
-import { MessageInterface } from 'wechaty/impls';
 import { HistoryMessage } from '../entities/history-message.entity';
 import { WechatAccount } from '../entities/wechat-account.entity';
 
@@ -25,9 +24,9 @@ export class ChatSessionService {
     private wechatAccount: WechatAccountService,
   ) {}
 
-  async updateFeatureFlagsById(id: number, feature: number) {
+  async updateFeatureFlagsById(id: number, feature: number, ownerId?: number) {
     const result = await this.chatSessionRepository.update(
-      { id },
+      { id, ownerId },
       { featureFlags: feature },
     );
     if (!result.affected) {
@@ -35,9 +34,13 @@ export class ChatSessionService {
     }
   }
 
-  async updateSystemMessageById(id: number, systemMessage: string) {
+  async updateSystemMessageById(
+    id: number,
+    systemMessage: string,
+    ownerId?: number,
+  ) {
     const result = await this.chatSessionRepository.update(
-      { id },
+      { id, ownerId },
       { systemMessage },
     );
     if (!result.affected) {
@@ -61,6 +64,7 @@ export class ChatSessionService {
     wechatId: string,
     conversationId: string,
     chatterInfo: Friend,
+    ownerId: number,
   ) {
     return this.dataSource.transaction(async (entityManager) => {
       const chatSessionRepository = entityManager.getRepository(ChatSession);
@@ -69,7 +73,7 @@ export class ChatSessionService {
 
       // Find the chat session
       const chatSession = await chatSessionRepository.findOne({
-        where: { conversationId },
+        where: { conversationId, wechatAccount: { wechatId } },
         relations: {
           friends: true,
           wechatAccount: true,
@@ -81,6 +85,7 @@ export class ChatSessionService {
       // If the chat session exists, update it
       if (chatSession) {
         chatSession.friends.push(chatterInfo);
+        chatSession.ownerId = ownerId;
         return await chatSessionRepository.save(chatSession);
       }
 
@@ -95,11 +100,14 @@ export class ChatSessionService {
         );
       }
 
-      return await chatSessionRepository.save({
+      const newChatSession = chatSessionRepository.create({
         conversationId,
         wechatAccount,
         friends: [chatterInfo],
+        ownerId,
       });
+
+      return await chatSessionRepository.save(newChatSession);
     });
   }
 
@@ -107,7 +115,7 @@ export class ChatSessionService {
     sessionId: number,
     sinceTime: Date,
     replierId: string,
-    replyOwnerId: number,
+    replyOwnerMessageId: number,
   ) {
     try {
       const result = await this.historyMessageRepository.count({
@@ -122,7 +130,7 @@ export class ChatSessionService {
           where: {
             id: sessionId,
             replyOwnerMessage: {
-              id: replyOwnerId,
+              id: replyOwnerMessageId,
             },
           },
         });
@@ -143,6 +151,7 @@ export class ChatSessionService {
     receiverId: string,
     source: string,
     sendTime: Date,
+    ownerId: number,
   ) {
     return this.dataSource.transaction(async (entityManager) => {
       const chatSessionRepository = entityManager.getRepository(ChatSession);
@@ -151,7 +160,12 @@ export class ChatSessionService {
 
       // Find the chat session
       const chatSession = await chatSessionRepository.findOne({
-        where: { conversationId },
+        where: {
+          conversationId,
+          wechatAccount: {
+            wechatId,
+          },
+        },
         relations: {
           historyMessages: true,
         },
@@ -162,7 +176,7 @@ export class ChatSessionService {
       }
 
       // Save the message
-      const message = await historyMessageRepository.save({
+      let message = historyMessageRepository.create({
         wechatId,
         type,
         textContent,
@@ -171,7 +185,10 @@ export class ChatSessionService {
         source,
         chatSession,
         sendTime,
+        ownerId,
       });
+
+      message = await historyMessageRepository.save(message);
 
       await chatSessionRepository.update(chatSession.id, {
         replyOwnerMessage: message,
@@ -214,11 +231,37 @@ export class ChatSessionService {
     });
   }
 
+  async getAllChatSessionsOfWechatIdAndOwner(
+    wechatId: string,
+    ownerId: number,
+  ) {
+    return await this.chatSessionRepository.find({
+      where: {
+        wechatAccount: {
+          wechatId,
+        },
+        ownerId: ownerId,
+      },
+      relations: {
+        wechatAccount: true,
+        friends: true,
+        historyMessages: true,
+        replyOwnerMessage: true,
+      },
+    });
+  }
+
   async adminGetAllSessions() {
     return await this.chatSessionRepository.find({
       relations: ['wechatAccount', 'friends'],
     });
   }
-
-  // Methods to create, find, update chat sessions...
+  async getAllSessions(ownerId: number) {
+    return await this.chatSessionRepository.find({
+      where: {
+        ownerId: ownerId,
+      },
+      relations: ['wechatAccount', 'friends'],
+    });
+  }
 }

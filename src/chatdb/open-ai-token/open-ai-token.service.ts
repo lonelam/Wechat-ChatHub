@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OpenAIToken } from '../entities/open-ai-token.entity';
@@ -11,24 +15,47 @@ export class OpenAITokenService {
   ) {}
 
   async updateToken(token: OpenAIToken) {
-    return this.openAITokenRepository.save(token);
+    if (token.id) {
+      const oldToken = await this.openAITokenRepository.findOne({
+        where: { id: token.id },
+      });
+      if (oldToken) {
+        return this.openAITokenRepository.save(token);
+      }
+    }
+    throw new BadRequestException(`Token with id ${token.id} not found`);
   }
 
-  async addToken(tokenValue: string): Promise<OpenAIToken> {
-    const token = this.openAITokenRepository.create({ token: tokenValue });
+  async addToken(
+    tokenValue: string,
+    baseUrl: string,
+    ownerId: number,
+  ): Promise<OpenAIToken> {
+    const token = this.openAITokenRepository.create({
+      token: tokenValue,
+      baseUrl,
+      ownerId,
+    });
     return this.openAITokenRepository.save(token);
   }
 
   async activateToken(tokenId: number): Promise<void> {
-    await this.openAITokenRepository.update(tokenId, {
+    const result = await this.openAITokenRepository.update(tokenId, {
       isActive: true,
     });
+    if (result.affected === 0) {
+      throw new NotFoundException(`Token with id ${tokenId} not found`);
+    }
   }
 
   async deactivateToken(tokenId: number): Promise<void> {
-    await this.openAITokenRepository.update(tokenId, {
+    const result = await this.openAITokenRepository.update(tokenId, {
       isActive: false,
     });
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`Token with id ${tokenId} not found`);
+    }
   }
 
   async getTokenByValue(tokenValue: string): Promise<OpenAIToken | null> {
@@ -46,6 +73,4 @@ export class OpenAITokenService {
   async getTokenById(id: number): Promise<OpenAIToken | null> {
     return this.openAITokenRepository.findOne({ where: { id } });
   }
-
-  // Additional methods as needed...
 }

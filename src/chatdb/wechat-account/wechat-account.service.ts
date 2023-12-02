@@ -13,6 +13,14 @@ export class WechatAccountService {
     private padLocalTokenRepository: Repository<PadLocalToken>,
   ) {}
 
+  async getOwnWechatAccount(ownerId: number): Promise<WechatAccount[]> {
+    return this.wechatAccountRepository.find({
+      where: {
+        ownerId,
+      },
+    });
+  }
+
   async getAllWechatAccounts(): Promise<WechatAccount[]> {
     return this.wechatAccountRepository.find();
   }
@@ -21,17 +29,23 @@ export class WechatAccountService {
     wechatId: string,
     name: string,
     avatarUrl: string,
+    ownerId: number,
   ): Promise<WechatAccount> {
     const wechatAccount = await this.wechatAccountRepository.findOne({
       where: { wechatId },
     });
     if (wechatAccount) {
+      if (wechatAccount.ownerId !== ownerId) {
+        wechatAccount.ownerId = ownerId;
+        return await this.wechatAccountRepository.save(wechatAccount);
+      }
       return wechatAccount;
     } else {
       const wechatAccount = this.wechatAccountRepository.create({
         wechatId,
         name,
         avatarUrl,
+        ownerId,
       });
       return this.wechatAccountRepository.save(wechatAccount);
     }

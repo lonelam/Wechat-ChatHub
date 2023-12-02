@@ -16,6 +16,7 @@ export class FriendService {
     friendGender: number,
     friendAlias: string,
     friendAvatarUrl: string,
+    ownerId: number,
   ) {
     const friend = await this.friendRepository.findOne({
       where: {
@@ -27,22 +28,26 @@ export class FriendService {
         friend.name !== friendName ||
         friend.gender !== friendGender ||
         friend.alias !== friendAlias ||
-        friend.avatarUrl !== friendAvatarUrl
+        friend.avatarUrl !== friendAvatarUrl ||
+        friend.ownerId !== ownerId
       ) {
         friend.name = friendName;
         friend.gender = friendGender;
         friend.alias = friendAlias;
         friend.avatarUrl = friendAvatarUrl;
+        friend.ownerId = ownerId;
         return this.friendRepository.save(friend);
       }
       return friend;
     }
-    return this.friendRepository.save({
+    const newFriend = this.friendRepository.create({
       wechatId: friendId,
       name: friendName,
       gender: friendGender,
       alias: friendAlias,
       avatarUrl: friendAvatarUrl,
+      ownerId,
     });
+    return this.friendRepository.save(newFriend);
   }
 }

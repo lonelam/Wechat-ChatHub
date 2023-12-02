@@ -5,8 +5,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { GrantedRoles } from './roles.decorator';
-import { User, UserRole } from 'src/chatdb/entities/user.entity';
+import { GrantedRoles, Public } from './roles.decorator';
+import { UserRole } from 'src/chatdb/entities/user.entity';
 import { promisify } from 'util';
 import { AuthService } from './auth.service';
 
@@ -18,24 +18,36 @@ export class RolesGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.get(Public, context.getHandler());
+    if (isPublic) {
+      return true;
+    }
+
     let requiredRoles = this.reflector.get(GrantedRoles, context.getHandler());
     if (!requiredRoles) {
       requiredRoles = [UserRole.ADMIN];
     }
+
     const request: Express.Request = context.switchToHttp().getRequest();
     if (!request.isAuthenticated()) {
       throw new UnauthorizedException();
     }
-    const user = request.user as User;
+    const user = request.user;
     if (!user) {
-      await promisify(request.logOut)();
+      await promisify(request.logOut.bind(request))();
       throw new UnauthorizedException();
     }
     console.log(`the user is ${user}`);
-    return matchRoles(requiredRoles, user.getUserRoles());
+    return matchRoles(
+      requiredRoles,
+      user.roles.map((role) => role.name),
+    );
   }
 }
 
 function matchRoles(requiredRoles: UserRole[], userRoles: UserRole[]): boolean {
+  if (userRoles.includes(UserRole.ADMIN)) {
+    return true;
+  }
   return requiredRoles.some((role) => userRoles.includes(role));
 }
