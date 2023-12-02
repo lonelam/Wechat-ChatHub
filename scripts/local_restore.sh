@@ -2,7 +2,7 @@
 
 # Replace [remote_user] and [remote_host] with your remote SSH login info
 REMOTE_USER=root
-REMOTE_HOST=laizn.com
+REMOTE_HOST=aliyun.laizn.com
 
 # Replace [archive_name] with the name of your archive
 ARCHIVE_NAME=chathub_db_data.tar.gz

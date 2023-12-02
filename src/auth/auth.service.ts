@@ -22,6 +22,14 @@ export class AuthService {
     return roles.length > 0;
   }
 
+  async getEmptySuperUser(): Promise<User | null> {
+    const user = await this.userService.findUserByUsername('admin');
+    if (!user?.password) {
+      return user;
+    }
+    return null;
+  }
+
   async validateUser(username: string, pass: string): Promise<User | null> {
     const user = await this.userService.findUserByUsername(username);
     if (user && user.password === pass) {

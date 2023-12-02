@@ -27,6 +27,7 @@ export class AuthController {
   }
 
   @Public()
+  @HttpCode(HttpStatus.OK)
   @Post('setup')
   async setup(
     @Body()

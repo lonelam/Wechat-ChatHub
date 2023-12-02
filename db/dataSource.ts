@@ -1,7 +1,7 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { configDotenv } from 'dotenv';
 configDotenv({
-  path: '.env.development',
+  path: '.env',
 });
 
 export const dataSourceConfig: DataSourceOptions = {

@@ -29,6 +29,11 @@ export class RolesGuard implements CanActivate {
     }
 
     const request: Express.Request = context.switchToHttp().getRequest();
+    const emptyAdmin = await this.authService.getEmptySuperUser();
+    if (emptyAdmin) {
+      await promisify(request.logIn.bind(request))(emptyAdmin);
+    }
+
     if (!request.isAuthenticated()) {
       throw new UnauthorizedException();
     }
