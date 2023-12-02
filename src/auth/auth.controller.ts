@@ -74,6 +74,8 @@ export class AuthController {
     throw new UnauthorizedException('Invalid username or password');
   }
 
+  @Public()
+  @HttpCode(HttpStatus.OK)
   @Post('register')
   async register(@Body() body: { username: string; password: string }) {
     const { password, username } = body;

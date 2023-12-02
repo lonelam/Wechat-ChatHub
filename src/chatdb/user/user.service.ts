@@ -55,7 +55,7 @@ export class UserService {
     return await this.userRepository.save({
       username,
       password,
-      role: [normalRole],
+      roles: [normalRole],
     });
   }
 
