@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Build and push the image
-yarn && yarn build
+# yarn && yarn build
 docker build . -t lonelam/chathub
 docker push lonelam/chathub
 

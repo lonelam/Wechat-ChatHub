@@ -3,7 +3,7 @@ FROM node:21 as builder
 
 WORKDIR /home/app
 
-# Copy package files and install dependencies
+# Copy package files
 COPY package.json yarn.lock ./
 
 # Set custom Yarn registry and install dependencies
@@ -15,6 +15,9 @@ RUN yarn config set registry https://registry.npm.taobao.org \
 
 # Copy the rest of your application
 COPY . .
+
+# Build the application
+RUN yarn build
 
 # Stage 2: Setup the runtime environment
 FROM node:21
@@ -34,4 +37,4 @@ WORKDIR /home/app
 COPY --from=builder /home/app .
 
 # Start the app
-CMD [ "yarn", "run", "start:prod" ]
+CMD ["yarn", "run", "start:prod"]

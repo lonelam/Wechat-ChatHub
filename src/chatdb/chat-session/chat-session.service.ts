@@ -39,10 +39,22 @@ export class ChatSessionService {
     systemMessage: string,
     ownerId?: number,
   ) {
-    const result = await this.chatSessionRepository.update(
-      { id, ownerId },
-      { systemMessage },
-    );
+    let result;
+    if (ownerId) {
+      result = await this.chatSessionRepository.update(
+        { id, ownerId },
+        {
+          systemMessage,
+        },
+      );
+    } else {
+      result = await this.chatSessionRepository.update(
+        { id },
+        {
+          systemMessage,
+        },
+      );
+    }
     if (!result.affected) {
       throw new NotFoundException(`the conversation with id ${id} not found`);
     }
