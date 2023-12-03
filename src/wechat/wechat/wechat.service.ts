@@ -133,13 +133,12 @@ export class WechatService implements OnModuleDestroy {
               this.activeBots.push(bot);
             }
 
-            const avatarUrl = user.payload?.avatar || '';
-            // if (!avatarUrl) {
-            //   console.log(
-            //     `no normal avatar URL found, add data url for fallback...`,
-            //   );
-            //   avatarUrl = await (await user.avatar()).toDataURL();
-            // }
+            let avatarUrl: string = '';
+            if (puppetType === 'wechaty-puppet-padlocal') {
+              avatarUrl = user.payload?.avatar || '';
+            } else {
+              avatarUrl = await (await user.avatar()).toDataURL();
+            }
 
             const accountOwner = this.botOwner.get(bot.id);
             const account = await this.wechatAccount.getOrCreateWechatAccount(
