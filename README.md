@@ -11,13 +11,14 @@
 <table>
   <tr>
     <td>
-      ![chub laizn com_](https://github.com/lonelam/chathub/assets/16681599/cffbe25c-a114-4312-b008-a746203c8f01)
+      <img src="https://github.com/lonelam/chathub/assets/16681599/cffbe25c-a114-4312-b008-a746203c8f01" alt="chub" />
     </td>
     <td>
-      ![image](https://github.com/lonelam/chathub/assets/16681599/d42e8a74-e19b-4c3d-9342-30d06161c98b)
+      <img src="https://github.com/lonelam/chathub/assets/16681599/d42e8a74-e19b-4c3d-9342-30d06161c98b" alt="image" />
     </td>
   </tr>
 </table>
+
 
 
 ## 安装
