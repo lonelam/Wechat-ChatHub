@@ -15,6 +15,8 @@ import { WechatAccountService } from 'src/chatdb/wechat-account/wechat-account.s
 import { OpenAIService } from 'src/gpt/openai/openai.service';
 import { WechatyBuilder, WechatyOptions } from 'wechaty';
 import { ContactInterface, WechatyInterface } from 'wechaty/impls';
+import type * as PUPPET from 'wechaty-puppet';
+import { PadLocalToken } from 'src/chatdb/entities/pad-local-token.entity';
 
 // 5分钟离线就转给其他人
 const BOT_TIMEOUT_MS = 1000 * 60 * 5;
@@ -32,19 +34,17 @@ export class WechatService implements OnModuleDestroy {
     private friendService: FriendService,
     private openAIService: OpenAIService,
   ) {
-    // this.padLocalToken.cleanPadLocalOccupations().then(() => {
-    this.padLocalToken.getAllOccupiedToken().then((token) => {
-      token.forEach((t) => {
-        if (
-          process.env.NODE_ENV !== 'development' &&
-          t.isActive &&
-          t.ownerId !== -1
-        ) {
-          this.startWechatBotByTokenId(t.token, t.ownerId).catch(console.error);
-        }
+    if (process.env.NODE_ENV === 'development') {
+      this.padLocalToken.cleanPadLocalOccupations();
+    } else {
+      this.padLocalToken.getAllOccupiedToken().then((token) => {
+        token.forEach((t) => {
+          if (t.isActive && t.ownerId !== -1) {
+            this.startWechatBotByToken(t, t.ownerId).catch(console.error);
+          }
+        });
       });
-    });
-    // });
+    }
   }
 
   async onModuleDestroy() {
@@ -72,15 +72,23 @@ export class WechatService implements OnModuleDestroy {
     return bot;
   }
 
-  async startWechatBotByTokenId(padLocalToken: string, userId: number) {
+  async startWechatBotByToken(
+    padLocalTokenEntity: PadLocalToken,
+    userId: number,
+  ) {
     return new Promise<{ qrcode: string; bot: WechatyInterface }>(
       async (resolve, reject) => {
+        const { token, puppetType } = padLocalTokenEntity;
+        const puppetOptions: PUPPET.PuppetOptions = {};
+        if (puppetType === 'wechaty-puppet-wechat') {
+          puppetOptions.uos = true;
+        } else {
+          puppetOptions.token = token;
+        }
         const buildOptions: WechatyOptions = {
-          name: 'run/Chathub',
-          puppet: 'wechaty-puppet-padlocal',
-          puppetOptions: {
-            token: padLocalToken,
-          },
+          name: `chathub-${padLocalTokenEntity.id}`,
+          puppet: puppetType as any,
+          puppetOptions,
         };
         const bot = WechatyBuilder.build(buildOptions);
 
@@ -142,7 +150,7 @@ export class WechatService implements OnModuleDestroy {
             );
 
             if (account) {
-              this.wechatAccount.bindAccountToToken(user.id, padLocalToken);
+              this.wechatAccount.bindAccountToToken(user.id, token);
             }
           } catch (error) {
             console.error('error ', error);
@@ -155,7 +163,7 @@ export class WechatService implements OnModuleDestroy {
             this.activeBots.splice(this.activeBots.indexOf(bot), 1);
           }
           if (this.wechatAccount) {
-            this.wechatAccount.unbindAccountFromToken(user.id, padLocalToken);
+            this.wechatAccount.unbindAccountFromToken(user.id, token);
           }
           this.hangingBots.push(bot);
         });
@@ -317,7 +325,7 @@ export class WechatService implements OnModuleDestroy {
       );
     }
     console.log('token', token);
-    return this.startWechatBotByTokenId(token.token, userId);
+    return this.startWechatBotByToken(token, userId);
   }
 
   async getAccountWithLoginState(wechatId: string, userId: number) {

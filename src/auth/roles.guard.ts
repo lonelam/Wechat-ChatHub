@@ -42,7 +42,7 @@ export class RolesGuard implements CanActivate {
       await promisify(request.logOut.bind(request))();
       throw new UnauthorizedException();
     }
-    console.log(`the user is ${user}`);
+    // console.log(`the user is ${user}`);
     return matchRoles(
       requiredRoles,
       user.roles.map((role) => role.name),

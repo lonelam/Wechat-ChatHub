@@ -27,15 +27,5 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
-  frontend:
-    image: lonelam/chathub-fe
-    restart: always
-    ports:
-      - "80:80" # Expose Nginx on port 80
-    environment:
-    - BACKEND_HOST=chathub:3000
-    depends_on:
-      - chathub
-
 volumes:
   db_data:

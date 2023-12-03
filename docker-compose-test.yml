@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  chathub:
+    image: lonelam/chathub
+    restart: always
+    ports:
+      - "127.0.0.1:18081:3000" # Changed port for testing
+    depends_on:
+      - db
+    environment:
+      DATABASE_HOST: db
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASS: ${DATABASE_PASS}
+      DATABASE_NAME: chathub_db
+
+  db:
+    image: mariadb
+    restart: always
+    ports:
+      - "127.0.0.1:3307:3306" # Changed port for testing
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASS}
+      MYSQL_DATABASE: chathub_db
+      MYSQL_USER: ${DATABASE_USER}
+      MYSQL_PASSWORD: ${DATABASE_PASS}
+    volumes:
+      - test_db_data:/var/lib/mysql # Changed volume name for testing
+
+  frontend:
+    image: lonelam/chathub-fe
+    restart: always
+    ports:
+      - "8081:80" # Changed port for testing
+    environment:
+      - BACKEND_HOST=chathub:3000
+    depends_on:
+      - chathub
+
+volumes:
+  test_db_data: # Changed volume name for testing
