@@ -7,8 +7,17 @@
 ## 功能说明
 
 核心功能就是聊天，并用ChatGPT自动生成根据自己人设可以回复的内容，并允许反馈修改。
-![chub laizn com_(iPhone 14 Pro Max)](https://github.com/lonelam/chathub/assets/16681599/cffbe25c-a114-4312-b008-a746203c8f01)
-![image](https://github.com/lonelam/chathub/assets/16681599/d42e8a74-e19b-4c3d-9342-30d06161c98b)
+
+<table>
+  <tr>
+    <td>
+      ![chub laizn com_](https://github.com/lonelam/chathub/assets/16681599/cffbe25c-a114-4312-b008-a746203c8f01)
+    </td>
+    <td>
+      ![image](https://github.com/lonelam/chathub/assets/16681599/d42e8a74-e19b-4c3d-9342-30d06161c98b)
+    </td>
+  </tr>
+</table>
 
 
 ## 安装
