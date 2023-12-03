@@ -6,6 +6,11 @@
 
 ## 功能说明
 
+核心功能就是聊天，并用ChatGPT自动生成根据自己人设可以回复的内容，并允许反馈修改。
+![chub laizn com_(iPhone 14 Pro Max)](https://github.com/lonelam/chathub/assets/16681599/cffbe25c-a114-4312-b008-a746203c8f01)
+![image](https://github.com/lonelam/chathub/assets/16681599/d42e8a74-e19b-4c3d-9342-30d06161c98b)
+
+
 ## 安装
 
 在安装 ChatHub 前，请确保您的系统已安装 Docker。执行以下命令以部署 ChatHub：
@@ -22,6 +27,8 @@ docker-compose up -d
 
 部署完成后，访问您的服务器上的 ChatHub前端，地址默认是http://localhost，在。初次使用时，添加用于微信登录和openai接口的token，然后回到主页，扫码登录微信。
 创建聊天记录后，admin页（点击扳手进入）可以修改system message从而给自己增加角色设定。
+![localhost_(Surface Pro 7)](https://github.com/lonelam/chathub/assets/16681599/b8178619-b13e-4216-a4ef-dcb53398caa1)
+
 
 ## 贡献
 
