@@ -22,6 +22,16 @@ docker-compose up -d
 
 请替换 `your_username`、`your_password` 和 `your_dbname` 为您的数据库用户名、密码和数据库名，部署在公网的话请注意网络安全。
 
+## 版本更新 🆙
+
+升级到最新版本
+
+```bash
+docker compose pull
+docker compose up -d
+docker image prune -f # 清理无用镜像
+```
+
 ## 使用方法 📖
 
 部署完成后，访问您的服务器上的 ChatHub前端，地址默认是 `http://localhost` ，在docker-compose.yml文件中自行更改。初次使用时，添加用于微信登录和openai接口的token，然后回到主页，扫码登录微信。创建聊天记录后，admin页（点击扳手进入）可以修改system message从而给自己增加角色设定。
