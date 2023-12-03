@@ -35,8 +35,10 @@ docker-compose up -d
 
 ## 使用方法
 
-部署完成后，访问您的服务器上的 ChatHub前端，地址默认是http://localhost，在。初次使用时，添加用于微信登录和openai接口的token，然后回到主页，扫码登录微信。
+部署完成后，访问您的服务器上的 ChatHub前端，地址默认是
+http://localhost ，在docker-compose.yml文件中自行更改。 初次使用时，添加用于微信登录和openai接口的token，然后回到主页，扫码登录微信。
 创建聊天记录后，admin页（点击扳手进入）可以修改system message从而给自己增加角色设定。
+
 ![localhost_(Surface Pro 7)](https://github.com/lonelam/chathub/assets/16681599/b8178619-b13e-4216-a4ef-dcb53398caa1)
 
 
