@@ -1,73 +1,32 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# ChatHub
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 介绍
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+迫于说话离不开ChatGPT但是又不想让ChatGPT自动回复，提供了一个Web版的解决方案。通过本项目，您可以将微信聊天托管至自己的服务器，并通过PWA网页小程序结合 GPT 进行交流。本项目支持 GPT 自动生成回复建议、微信多账号同时在线、以及超时自动回复等功能。
 
-## Description
+## 功能说明
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 安装
 
-## Installation
+在安装 ChatHub 前，请确保您的系统已安装 Docker。执行以下命令以部署 ChatHub：
 
 ```bash
-$ yarn install
+echo "DATABASE_USER=your_username\nDATABASE_PASS=your_password\nDATABASE_NAME=your_dbname" > .env
+curl -O https://raw.githubusercontent.com/lonelam/chathub/main/docker-compose.yml
+docker-compose up -d
 ```
 
-## Running the app
+请替换 `your_username`、`your_password` 和 `your_dbname` 为您的数据库用户名、密码和数据库名，部署在公网的话请注意网络安全。
 
-```bash
-# development
-$ yarn run start
+## 使用方法
 
-# watch mode
-$ yarn run start:dev
+部署完成后，访问您的服务器上的 ChatHub前端，地址默认是http://localhost，在。初次使用时，添加用于微信登录和openai接口的token，然后回到主页，扫码登录微信。
+创建聊天记录后，admin页（点击扳手进入）可以修改system message从而给自己增加角色设定。
 
-# production mode
-$ yarn run start:prod
-```
+## 贡献
 
-## Test
+一个好用的前端项目离不开用户反馈，您可以在Issue/Discussion中提出您的宝贵意见，或者直接提交PR。欢迎贡献您的智慧和代码！
 
-```bash
-# unit tests
-$ yarn run test
+## 致谢
 
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
+特别感谢 Wechaty 团队，为我们提供了稳定有效的微信接入方式。
