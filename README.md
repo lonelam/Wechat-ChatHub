@@ -46,6 +46,10 @@ docker image prune -f # 清理无用镜像
 ![GitHub PRs](https://img.shields.io/github/issues-pr/lonelam/chathub)
 ![Docker Pulls](https://img.shields.io/docker/pulls/lonelam/chathub)
 
+## RoadMap
+[] 支持插件
+[] 支持群聊
+
 ## 致谢 🙌
 
 特别感谢 Wechaty 团队，为我们提供了稳定有效的微信接入方式。
