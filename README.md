@@ -47,8 +47,12 @@ docker image prune -f # 清理无用镜像
 ![Docker Pulls](https://img.shields.io/docker/pulls/lonelam/chathub)
 
 ## RoadMap
-[] 支持插件
-[] 支持群聊
+
+- [x] 支持uos方案实现免费部署
+
+- [ ] 支持插件
+
+- [ ] 支持群聊
 
 ## 致谢 🙌
 
